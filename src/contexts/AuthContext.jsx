@@ -1,0 +1,136 @@
+// src/contexts/AuthContext.jsx
+import { createContext, useContext, useEffect, useState } from "react";
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  sendPasswordResetEmail,
+} from "firebase/auth";
+import {
+  doc, getDoc, setDoc, getDocs,
+  collection, query, where, updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const [user, setUser]       = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        await refreshProfile(firebaseUser.uid, firebaseUser.email);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  async function refreshProfile(uid, email) {
+    const snap = await getDoc(doc(db, "users", uid));
+    if (!snap.exists()) return;
+
+    let data = snap.data();
+
+    // Se for aluno e ainda não tiver studentId, busca pelo email
+    // na coleção students para fazer a ligação automática
+    if (data.role === "student" && !data.studentId && email) {
+      const studentSnap = await getDocs(
+        query(collection(db, "students"), where("email", "==", email))
+      );
+      if (!studentSnap.empty) {
+        const studentDoc = studentSnap.docs[0];
+        await updateDoc(doc(db, "users", uid), {
+          studentId: studentDoc.id,
+          // copia dados úteis para o perfil
+          phone:     studentDoc.data().phone     ?? data.phone     ?? null,
+          goal:      studentDoc.data().goal      ?? data.goal      ?? null,
+          birthDate: studentDoc.data().birthDate ?? data.birthDate ?? null,
+        });
+        data = { ...data, studentId: studentDoc.id };
+      }
+    }
+
+    setProfile(data);
+  }
+
+  // ── Registrar trainer ──────────────────────────────────────
+  async function registerTrainer({ name, email, password }) {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, "users", cred.user.uid), {
+      uid:       cred.user.uid,
+      name,
+      email,
+      role:      "trainer",
+      plan:      "free",
+      createdAt: serverTimestamp(),
+    });
+    await refreshProfile(cred.user.uid, email);
+    return cred;
+  }
+
+  // ── Registrar aluno ────────────────────────────────────────
+  // Chamado quando o aluno cria sua própria conta.
+  // Busca automaticamente o doc em `students` pelo email.
+  async function registerStudent({ name, email, password }) {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+
+    // Verifica se o trainer já cadastrou este aluno
+    const studentSnap = await getDocs(
+      query(collection(db, "students"), where("email", "==", email))
+    );
+    const studentId = studentSnap.empty ? null : studentSnap.docs[0].id;
+
+    await setDoc(doc(db, "users", cred.user.uid), {
+      uid:       cred.user.uid,
+      name,
+      email,
+      role:      "student",
+      studentId: studentId,
+      createdAt: serverTimestamp(),
+    });
+    await refreshProfile(cred.user.uid, email);
+    return cred;
+  }
+
+  // ── Login ──────────────────────────────────────────────────
+  async function login(email, password) {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    await refreshProfile(cred.user.uid, cred.user.email);
+    return cred;
+  }
+
+  async function logout() { await signOut(auth); }
+
+  async function resetPassword(email) {
+    await sendPasswordResetEmail(auth, email);
+  }
+
+  const role = profile?.role ?? null;
+
+  return (
+    <AuthContext.Provider value={{
+      user, profile, role, loading,
+      login, logout,
+      registerTrainer, registerStudent,
+      resetPassword, refreshProfile,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth deve ser usado dentro de <AuthProvider>");
+  return ctx;
+}
