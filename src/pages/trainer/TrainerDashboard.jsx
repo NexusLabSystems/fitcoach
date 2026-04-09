@@ -1,6 +1,7 @@
 // src/pages/trainer/TrainerDashboard.jsx
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -45,6 +46,7 @@ function StudentRow({ student }) {
 
 export default function TrainerDashboard() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
 
   const [stats, setStats]     = useState({ students: 0, active: 0, plans: 0, pending: 0 });
   const [students, setStudents] = useState([]);
@@ -170,7 +172,10 @@ export default function TrainerDashboard() {
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-900">Alunos recentes</h2>
-            <button className="text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors">
+            <button
+              onClick={() => navigate("/trainer/students")}
+              className="text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors"
+            >
               Ver todos →
             </button>
           </div>
@@ -190,7 +195,10 @@ export default function TrainerDashboard() {
           ) : students.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-sm text-gray-400 mb-3">Nenhum aluno cadastrado ainda.</p>
-              <button className="btn-primary text-xs px-4 py-2">
+              <button
+                onClick={() => navigate("/trainer/students")}
+                className="btn-primary text-xs px-4 py-2"
+              >
                 Cadastrar primeiro aluno
               </button>
             </div>
@@ -206,13 +214,14 @@ export default function TrainerDashboard() {
           <h2 className="text-sm font-semibold text-gray-900 mb-4">Ações rápidas</h2>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "Novo aluno",    color: "bg-brand-50 text-brand-600 hover:bg-brand-100", icon: "👤" },
-              { label: "Novo treino",   color: "bg-blue-50 text-blue-600 hover:bg-blue-100",   icon: "🏋️" },
-              { label: "Avaliação",     color: "bg-teal-50 text-teal-600 hover:bg-teal-100",   icon: "📊" },
-              { label: "Cobrança",      color: "bg-yellow-50 text-yellow-700 hover:bg-yellow-100", icon: "💰" },
+              { label: "Novo aluno",  color: "bg-brand-50 text-brand-600 hover:bg-brand-100",     icon: "👤", to: "/trainer/students"     },
+              { label: "Novo treino", color: "bg-blue-50 text-blue-600 hover:bg-blue-100",         icon: "🏋️", to: "/trainer/workouts/new" },
+              { label: "Avaliação",   color: "bg-teal-50 text-teal-600 hover:bg-teal-100",         icon: "📊", to: "/trainer/assessments"  },
+              { label: "Cobrança",    color: "bg-yellow-50 text-yellow-700 hover:bg-yellow-100",   icon: "💰", to: "/trainer/payments"     },
             ].map(action => (
               <button
                 key={action.label}
+                onClick={() => navigate(action.to)}
                 className={`${action.color} rounded-xl p-4 text-left transition-colors`}
               >
                 <span className="text-2xl block mb-2">{action.icon}</span>

@@ -8,6 +8,7 @@ import { ProtectedRoute, PublicRoute } from "@/routes/ProtectedRoute";
 import LoginPage          from "@/pages/auth/LoginPage";
 import RegisterPage       from "@/pages/auth/RegisterPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
+import InvitePage         from "@/pages/auth/InvitePage";
 
 // Trainer
 import TrainerLayout      from "@/pages/trainer/TrainerLayout";
@@ -18,6 +19,9 @@ import WorkoutsPage       from "@/pages/trainer/WorkoutsPage";
 import WorkoutBuilderPage from "@/pages/trainer/WorkoutBuilderPage";
 import AssessmentsPage    from "@/pages/trainer/AssessmentsPage";
 import PaymentsPage       from "@/pages/trainer/PaymentsPage";
+import ExercisesPage      from "@/pages/trainer/ExercisesPage";
+import SettingsPage       from "@/pages/trainer/SettingsPage";
+import OfflineBanner      from "@/components/ui/OfflineBanner";
 
 // Student
 import StudentLayout   from "@/pages/student/StudentLayout";
@@ -37,6 +41,7 @@ export default function App() {
             success: { iconTheme: { primary: "#FF5722", secondary: "#fff" } },
           }}
         />
+        <OfflineBanner />
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -46,6 +51,9 @@ export default function App() {
             <Route path="/register"        element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           </Route>
+
+          {/* Convite — pública, fora do PublicRoute para não redirecionar quem já está logado */}
+          <Route path="/invite/:token" element={<InvitePage />} />
 
           {/* Trainer */}
           <Route element={<ProtectedRoute role="trainer" />}>
@@ -58,6 +66,8 @@ export default function App() {
               <Route path="workouts/:id" element={<WorkoutBuilderPage />} />
               <Route path="assessments"  element={<AssessmentsPage />} />
               <Route path="payments"     element={<PaymentsPage />} />
+              <Route path="exercises"    element={<ExercisesPage />} />
+              <Route path="settings"     element={<SettingsPage />} />
             </Route>
           </Route>
 

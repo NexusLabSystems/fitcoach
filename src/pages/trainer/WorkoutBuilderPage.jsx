@@ -1,36 +1,13 @@
 // src/pages/trainer/WorkoutBuilderPage.jsx
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate, useParams }  from "react-router-dom";
+import { useExercises, MUSCLE_GROUPS } from "@/hooks/useExercises";
 import { useWorkouts }             from "@/hooks/useWorkouts";
 import { useStudents }             from "@/hooks/useStudents";
 import toast                       from "react-hot-toast";
 import clsx                        from "clsx";
 
-// ── Biblioteca de exercícios mock (substitua por Firestore depois) ──
-const MUSCLE_GROUPS = ["Todos","Peito","Costas","Ombros","Bíceps","Tríceps","Pernas","Glúteos","Core","Cardio"];
-
-const EXERCISE_LIBRARY = [
-  { id:"e1",  name:"Supino Reto com Barra",     group:"Peito",   difficulty:"intermediário" },
-  { id:"e2",  name:"Supino Inclinado Halteres", group:"Peito",   difficulty:"intermediário" },
-  { id:"e3",  name:"Crucifixo",                 group:"Peito",   difficulty:"básico" },
-  { id:"e4",  name:"Crossover no Cabo",         group:"Peito",   difficulty:"básico" },
-  { id:"e5",  name:"Puxada Frontal",            group:"Costas",  difficulty:"básico" },
-  { id:"e6",  name:"Remada Curvada",            group:"Costas",  difficulty:"intermediário" },
-  { id:"e7",  name:"Remada Unilateral",         group:"Costas",  difficulty:"básico" },
-  { id:"e8",  name:"Desenvolvimento com Barra", group:"Ombros",  difficulty:"intermediário" },
-  { id:"e9",  name:"Elevação Lateral",          group:"Ombros",  difficulty:"básico" },
-  { id:"e10", name:"Rosca Direta",              group:"Bíceps",  difficulty:"básico" },
-  { id:"e11", name:"Rosca Concentrada",         group:"Bíceps",  difficulty:"básico" },
-  { id:"e12", name:"Tríceps Corda",             group:"Tríceps", difficulty:"básico" },
-  { id:"e13", name:"Agachamento Livre",         group:"Pernas",  difficulty:"avançado" },
-  { id:"e14", name:"Leg Press 45°",             group:"Pernas",  difficulty:"básico" },
-  { id:"e15", name:"Cadeira Extensora",         group:"Pernas",  difficulty:"básico" },
-  { id:"e16", name:"Stiff",                     group:"Glúteos", difficulty:"intermediário" },
-  { id:"e17", name:"Glúteo no Cabo",            group:"Glúteos", difficulty:"básico" },
-  { id:"e18", name:"Prancha",                   group:"Core",    difficulty:"básico" },
-  { id:"e19", name:"Abdominal Crunch",          group:"Core",    difficulty:"básico" },
-  { id:"e20", name:"Corrida na Esteira",        group:"Cardio",  difficulty:"básico" },
-];
+// Biblioteca vinda do Firestore via hook
 
 const DIFF_STYLE = {
   básico:        "badge-green",
@@ -45,21 +22,21 @@ const uid = () => `item_${Date.now()}_${_uid++}`;
 function ExerciseRow({ item, index, onUpdate, onRemove }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+    <div className="overflow-hidden bg-white border border-gray-200 rounded-xl">
       <div className="flex items-center gap-3 px-4 py-3">
-        <span className="w-5 h-5 rounded-full bg-brand-100 text-brand-600 text-xs font-semibold flex items-center justify-center flex-shrink-0">
+        <span className="flex items-center justify-center flex-shrink-0 w-5 h-5 text-xs font-semibold rounded-full bg-brand-100 text-brand-600">
           {index + 1}
         </span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 truncate">{item.exercise.name}</p>
           <p className="text-xs text-gray-400">{item.sets}×{item.reps} · {item.load ? `${item.load}kg · ` : ""}{item.rest}s descanso</p>
         </div>
-        <button onClick={() => setOpen(v => !v)} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100">
+        <button onClick={() => setOpen(v => !v)} className="flex items-center justify-center text-gray-400 rounded-lg w-7 h-7 hover:bg-gray-100">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d={open ? "M18 15l-6-6-6 6" : "M6 9l6 6 6-6"}/>
           </svg>
         </button>
-        <button onClick={() => onRemove(item.id)} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50">
+        <button onClick={() => onRemove(item.id)} className="flex items-center justify-center text-gray-400 rounded-lg w-7 h-7 hover:text-red-500 hover:bg-red-50">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M18 6L6 18M6 6l12 12"/>
           </svg>
@@ -67,7 +44,7 @@ function ExerciseRow({ item, index, onUpdate, onRemove }) {
       </div>
 
       {open && (
-        <div className="border-t border-gray-100 p-4 bg-gray-50 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 p-4 border-t border-gray-100 bg-gray-50 sm:grid-cols-4">
           <label className="flex flex-col gap-1">
             <span className="label">Séries</span>
             <input type="number" min="1" max="20" value={item.sets}
@@ -97,7 +74,7 @@ function ExerciseRow({ item, index, onUpdate, onRemove }) {
               <span className="label">Observações</span>
               <textarea rows={2} value={item.notes} placeholder="Ex: foco na fase excêntrica..."
                 onChange={e => onUpdate(item.id, "notes", e.target.value)}
-                className="input resize-none text-sm" />
+                className="text-sm resize-none input" />
             </label>
           </div>
         </div>
@@ -112,6 +89,7 @@ export default function WorkoutBuilderPage() {
   const { id }                = useParams(); // existe se estiver editando
   const { createPlan, updatePlan, getPlan } = useWorkouts();
   const { students }          = useStudents();
+  const { exercises: libraryExercises, loading: exLoading } = useExercises();
 
   const [planName, setPlanName]     = useState("Novo Plano de Treino");
   const [studentId, setStudentId]   = useState("");
@@ -140,8 +118,8 @@ export default function WorkoutBuilderPage() {
 
   const currentDay = days.find(d => d.id === activeDay);
 
-  const filteredExercises = EXERCISE_LIBRARY.filter(ex => {
-    const mGroup  = group === "Todos" || ex.group === group;
+  const filteredExercises = libraryExercises.filter(ex => {
+    const mGroup  = group === "Todos" || ex.muscleGroup === group;
     const mSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     return mGroup && mSearch;
   });
@@ -210,7 +188,7 @@ export default function WorkoutBuilderPage() {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto animate-pulse">
-        <div className="h-8 bg-gray-100 rounded w-64 mb-6" />
+        <div className="w-64 h-8 mb-6 bg-gray-100 rounded" />
         <div className="h-64 bg-gray-100 rounded-2xl" />
       </div>
     );
@@ -219,18 +197,18 @@ export default function WorkoutBuilderPage() {
   return (
     <div className="max-w-6xl mx-auto animate-fade-in">
       {/* ── Top bar ─────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+      <div className="flex flex-col items-start gap-4 mb-6 sm:flex-row sm:items-center">
         <button onClick={() => navigate("/trainer/workouts")} className="text-sm text-gray-400 hover:text-gray-700 flex items-center gap-1.5 transition-colors">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M19 12H5M12 5l-7 7 7 7"/>
           </svg>
           Treinos
         </button>
-        <div className="flex-1 flex items-center gap-3 min-w-0">
+        <div className="flex items-center flex-1 min-w-0 gap-3">
           <input
             value={planName}
             onChange={e => setPlanName(e.target.value)}
-            className="text-xl font-semibold bg-transparent border-none outline-none text-gray-900 flex-1 min-w-0 focus:ring-0 p-0"
+            className="flex-1 min-w-0 p-0 text-xl font-semibold text-gray-900 bg-transparent border-none outline-none focus:ring-0"
             placeholder="Nome do plano..."
           />
         </div>
@@ -248,7 +226,7 @@ export default function WorkoutBuilderPage() {
           </select>
           <button onClick={handleSave} disabled={saving} className="btn-primary">
             {saving ? (
-              <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Salvando...</>
+              <><span className="w-4 h-4 border-2 border-white rounded-full border-t-transparent animate-spin" />Salvando...</>
             ) : (
               <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
@@ -260,7 +238,7 @@ export default function WorkoutBuilderPage() {
       </div>
 
       {/* ── Day tabs ────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 pb-1 mb-6 overflow-x-auto">
         {days.map(day => (
           <DayTab
             key={day.id}
@@ -271,7 +249,7 @@ export default function WorkoutBuilderPage() {
             onRemove={days.length > 1 ? removeDay : null}
           />
         ))}
-        <button onClick={addDay} className="flex items-center gap-1 px-3 py-2 rounded-xl bg-gray-100 text-gray-500 hover:bg-orange-50 hover:text-brand-500 text-sm transition-colors whitespace-nowrap flex-shrink-0">
+        <button onClick={addDay} className="flex items-center flex-shrink-0 gap-1 px-3 py-2 text-sm text-gray-500 transition-colors bg-gray-100 rounded-xl hover:bg-orange-50 hover:text-brand-500 whitespace-nowrap">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14"/>
           </svg>
@@ -284,15 +262,15 @@ export default function WorkoutBuilderPage() {
 
         {/* Left: exercise list for current day */}
         <section>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="mb-4 text-sm text-gray-500">
             {currentDay?.exercises.length === 0
               ? "Nenhum exercício — adicione da biblioteca →"
               : `${currentDay?.exercises.length} exercício${currentDay?.exercises.length > 1 ? "s" : ""}`}
           </p>
 
           {currentDay?.exercises.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-200 rounded-2xl text-center">
-              <div className="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center mb-3">
+            <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-gray-200 border-dashed rounded-2xl">
+              <div className="flex items-center justify-center w-12 h-12 mb-3 rounded-2xl bg-brand-50">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="1.5" strokeLinecap="round">
                   <path d="M6 4v16M18 4v16M6 12h12M3 8h3M18 8h3M3 16h3M18 16h3"/>
                 </svg>
@@ -310,11 +288,11 @@ export default function WorkoutBuilderPage() {
         </section>
 
         {/* Right: exercise library */}
-        <aside className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col" style={{ maxHeight: "72vh" }}>
-          <div className="p-4 border-b border-gray-100 flex-shrink-0">
-            <p className="text-sm font-semibold text-gray-900 mb-3">Biblioteca</p>
+        <aside className="flex flex-col overflow-hidden bg-white border border-gray-200 rounded-2xl" style={{ maxHeight: "72vh" }}>
+          <div className="flex-shrink-0 p-4 border-b border-gray-100">
+            <p className="mb-3 text-sm font-semibold text-gray-900">Biblioteca</p>
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <svg className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
               </svg>
               <input type="text" placeholder="Buscar..." value={search}
@@ -324,8 +302,8 @@ export default function WorkoutBuilderPage() {
           </div>
 
           {/* Muscle group filter */}
-          <div className="px-3 py-2 border-b border-gray-100 flex-shrink-0">
-            <div className="flex gap-1 overflow-x-auto pb-1">
+          <div className="flex-shrink-0 px-3 py-2 border-b border-gray-100">
+            <div className="flex gap-1 pb-1 overflow-x-auto">
               {MUSCLE_GROUPS.map(g => (
                 <button key={g} onClick={() => setGroup(g)}
                   className={clsx("flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
@@ -337,7 +315,7 @@ export default function WorkoutBuilderPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+          <div className="flex flex-col flex-1 gap-2 p-3 overflow-y-auto">
             {filteredExercises.map(ex => {
               const added = currentDay?.exercises.some(e => e.exercise.id === ex.id);
               return (
@@ -347,12 +325,12 @@ export default function WorkoutBuilderPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{ex.name}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[11px] text-gray-400">{ex.group}</span>
+                      <span className="text-[11px] text-gray-400">{ex.muscleGroup}</span>
                       <span className={`badge text-[11px] py-0 ${DIFF_STYLE[ex.difficulty]}`}>{ex.difficulty}</span>
                     </div>
                   </div>
                   {!added && (
-                    <div className="w-6 h-6 rounded-lg bg-brand-500 flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-center justify-center flex-shrink-0 w-6 h-6 rounded-lg bg-brand-500">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
                         <path d="M12 5v14M5 12h14"/>
                       </svg>
@@ -386,7 +364,7 @@ function DayTab({ day, isActive, onClick, onRename, onRemove }) {
           onBlur={commit}
           onKeyDown={e => e.key === "Enter" && commit()}
           onClick={e => e.stopPropagation()}
-          className="bg-transparent border-none outline-none text-sm font-medium w-20" />
+          className="w-20 text-sm font-medium bg-transparent border-none outline-none" />
       ) : (
         <span className="text-sm font-medium whitespace-nowrap"
           onDoubleClick={e => { e.stopPropagation(); setEditing(true); }}>
@@ -400,7 +378,7 @@ function DayTab({ day, isActive, onClick, onRename, onRemove }) {
       </span>
       {isActive && onRemove && (
         <button onClick={e => { e.stopPropagation(); onRemove(day.id); }}
-          className="opacity-0 group-hover:opacity-100 w-4 h-4 flex items-center justify-center rounded-full hover:bg-white/30 transition-all">
+          className="flex items-center justify-center w-4 h-4 transition-all rounded-full opacity-0 group-hover:opacity-100 hover:bg-white/30">
           <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
             <path d="M18 6L6 18M6 6l12 12"/>
           </svg>

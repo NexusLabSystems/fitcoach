@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────────────────────
 import { initializeApp } from "firebase/app";
 import { getAuth }        from "firebase/auth";
+import { enableIndexedDbPersistence } from "firebase/firestore";
 import { getFirestore }   from "firebase/firestore";
 import { getStorage }     from "firebase/storage";
 
@@ -35,4 +36,17 @@ const app = initializeApp(firebaseConfig);
 export const auth    = getAuth(app);
 export const db      = getFirestore(app);
 export const storage = getStorage(app);
+
+// Ativa persistência offline do Firestore
+// Permite que dados já carregados fiquem disponíveis sem internet
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === "failed-precondition") {
+    // Múltiplas abas abertas — persistência só funciona em uma aba por vez
+    console.warn("Firestore offline: múltiplas abas detectadas.");
+  } else if (err.code === "unimplemented") {
+    // Navegador não suporta
+    console.warn("Firestore offline: navegador não suportado.");
+  }
+});
+
 export default app;

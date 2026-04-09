@@ -1,7 +1,7 @@
 // src/pages/student/StudentProfile.jsx
 import { useNavigate }   from "react-router-dom";
 import { useAuth }       from "@/contexts/AuthContext";
-import Avatar            from "@/components/ui/Avatar";
+import AvatarUpload      from "@/components/ui/AvatarUpload";
 import toast             from "react-hot-toast";
 
 export default function StudentProfile() {
@@ -22,19 +22,27 @@ export default function StudentProfile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white px-5 pt-12 pb-6 border-b border-gray-100">
+      <div className="px-5 pt-12 pb-6 bg-white border-b border-gray-100">
         <div className="flex items-center gap-4">
-          <Avatar name={profile?.name ?? ""} size="xl" />
+          <AvatarUpload
+            name={profile?.name ?? ""}
+            src={profile?.photoURL}
+            userId={profile?.uid}
+            collection="users"
+            docId={profile?.uid}
+            field="photoURL"
+            size="xl"
+          />
           <div>
             <h1 className="text-xl font-semibold text-gray-900">{profile?.name}</h1>
-            <span className="badge-green mt-1">Aluno ativo</span>
+            <span className="mt-1 badge-green">Aluno ativo</span>
           </div>
         </div>
       </div>
 
-      <div className="p-5 flex flex-col gap-4">
+      <div className="flex flex-col gap-4 p-5">
         {rows.length > 0 && (
-          <div className="card p-4 divide-y divide-gray-50">
+          <div className="p-4 divide-y card divide-gray-50">
             {rows.map(r => (
               <div key={r.label} className="flex justify-between py-3 first:pt-0 last:pb-0">
                 <span className="text-sm text-gray-400">{r.label}</span>
@@ -46,7 +54,7 @@ export default function StudentProfile() {
 
         <button
           onClick={handleLogout}
-          className="btn-ghost w-full py-3 text-red-500 hover:bg-red-50 border border-red-100"
+          className="w-full py-3 text-red-500 border border-red-100 btn-ghost hover:bg-red-50"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>

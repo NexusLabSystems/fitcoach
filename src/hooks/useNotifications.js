@@ -1,0 +1,111 @@
+// src/hooks/useNotifications.js
+import { useEffect, useState, useCallback } from "react";
+import {
+  collection, query, where, onSnapshot,
+  updateDoc, doc, serverTimestamp,
+  addDoc, getDocs,
+} from "firebase/firestore";
+import { db }      from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+
+export function useNotifications() {
+  const { user }                    = useAuth();
+  const [notifications, setNotifs]  = useState([]);
+  const [loading, setLoading]       = useState(true);
+
+  // ── Escuta notificações em tempo real ──────────────────────
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, "notifications"),
+      where("trainerId", "==", user.uid),
+    );
+    const unsub = onSnapshot(q, snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      data.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+      setNotifs(data);
+      setLoading(false);
+    });
+    return unsub;
+  }, [user]);
+
+  // ── Verifica pagamentos vencidos e cria notificações ───────
+  const checkOverduePayments = useCallback(async (students) => {
+    if (!user) return;
+
+    const studentMap = Object.fromEntries(students.map(s => [s.id, s]));
+
+    // Busca pagamentos pending com data de vencimento passada
+    const snap = await getDocs(
+      query(
+        collection(db, "payments"),
+        where("trainerId", "==", user.uid),
+        where("status",    "==", "pending"),
+      )
+    );
+
+    const now = new Date();
+    const overdue = snap.docs.filter(d => {
+      const due = d.data().dueDate?.toDate
+        ? d.data().dueDate.toDate()
+        : new Date(d.data().dueDate);
+      return due < now;
+    });
+
+    for (const payDoc of overdue) {
+      const payment = { id: payDoc.id, ...payDoc.data() };
+
+      // Marca como atrasado
+      await updateDoc(doc(db, "payments", payment.id), {
+        status:    "overdue",
+        updatedAt: serverTimestamp(),
+      });
+
+      // Verifica se já existe notificação para este pagamento
+      const existingSnap = await getDocs(
+        query(
+          collection(db, "notifications"),
+          where("trainerId",  "==", user.uid),
+          where("paymentId",  "==", payment.id),
+          where("type",       "==", "overdue_payment"),
+        )
+      );
+      if (!existingSnap.empty) continue;
+
+      const studentName = studentMap[payment.studentId]?.name ?? "Aluno";
+
+      // Cria notificação
+      await addDoc(collection(db, "notifications"), {
+        trainerId:   user.uid,
+        paymentId:   payment.id,
+        studentId:   payment.studentId,
+        studentName,
+        type:        "overdue_payment",
+        title:       "Pagamento atrasado",
+        message:     `${studentName} está com pagamento em atraso de R$ ${Number(payment.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.`,
+        read:        false,
+        createdAt:   serverTimestamp(),
+      });
+    }
+
+    return overdue.length;
+  }, [user]);
+
+  // ── Marcar como lida ───────────────────────────────────────
+  const markRead = useCallback(async (id) => {
+    await updateDoc(doc(db, "notifications", id), { read: true });
+  }, []);
+
+  // ── Marcar todas como lidas ────────────────────────────────
+  const markAllRead = useCallback(async () => {
+    const unread = notifications.filter(n => !n.read);
+    await Promise.all(unread.map(n => updateDoc(doc(db, "notifications", n.id), { read: true })));
+  }, [notifications]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  return {
+    notifications, loading, unreadCount,
+    checkOverduePayments, markRead, markAllRead,
+  };
+}

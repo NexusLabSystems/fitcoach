@@ -39,6 +39,102 @@ function formatCurrency(val) {
   return Number(val).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+// ── Edit payment modal ─────────────────────────────────────────
+function EditPaymentModal({ open, onClose, payment, students }) {
+  const dueDateStr = payment?.dueDate
+    ? format(payment.dueDate.toDate ? payment.dueDate.toDate() : new Date(payment.dueDate), "yyyy-MM-dd")
+    : "";
+
+  const [form, setForm]       = useState({ studentId: "", amount: "", dueDate: "", description: "", status: "pending" });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (payment) {
+      setForm({
+        studentId:   payment.studentId ?? "",
+        amount:      payment.amount ?? "",
+        dueDate:     dueDateStr,
+        description: payment.description ?? "",
+        status:      payment.status ?? "pending",
+      });
+    }
+  }, [payment]);
+
+  function handleChange(e) { setForm(p => ({ ...p, [e.target.name]: e.target.value })); }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.studentId || !form.amount || !form.dueDate) {
+      toast.error("Preencha todos os campos obrigatórios."); return;
+    }
+    setLoading(true);
+    try {
+      const updates = {
+        studentId:   form.studentId,
+        amount:      parseFloat(form.amount),
+        dueDate:     new Date(form.dueDate),
+        description: form.description,
+        status:      form.status,
+      };
+      if (form.status === "paid" && payment.status !== "paid") {
+        updates.paidAt = serverTimestamp();
+      }
+      await updateDoc(doc(db, "payments", payment.id), updates);
+      toast.success("Cobrança atualizada!");
+      onClose();
+    } catch { toast.error("Erro ao atualizar cobrança."); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Editar cobrança">
+      <form onSubmit={handleSubmit}>
+        <Modal.Body className="flex flex-col gap-4">
+          <div>
+            <label className="label">Aluno *</label>
+            <select name="studentId" value={form.studentId} onChange={handleChange} className="input" disabled={loading}>
+              <option value="">Selecionar aluno</option>
+              {students.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Valor (R$) *</label>
+              <input type="number" name="amount" min="0" step="0.01" placeholder="150,00"
+                value={form.amount} onChange={handleChange} className="input" disabled={loading} />
+            </div>
+            <div>
+              <label className="label">Vencimento *</label>
+              <input type="date" name="dueDate" value={form.dueDate} onChange={handleChange} className="input" disabled={loading} />
+            </div>
+          </div>
+          <div>
+            <label className="label">Descrição</label>
+            <input type="text" name="description" value={form.description} onChange={handleChange} className="input" disabled={loading} />
+          </div>
+          <div>
+            <label className="label">Status</label>
+            <select name="status" value={form.status} onChange={handleChange} className="input" disabled={loading}>
+              <option value="pending">Pendente</option>
+              <option value="paid">Pago</option>
+              <option value="overdue">Atrasado</option>
+              <option value="canceled">Cancelado</option>
+            </select>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <button type="button" onClick={onClose} className="btn-secondary" disabled={loading}>Cancelar</button>
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Salvando...</> : "Salvar alterações"}
+          </button>
+        </Modal.Footer>
+      </form>
+    </Modal>
+  );
+}
+
 // ── New payment modal ──────────────────────────────────────────
 function NewPaymentModal({ open, onClose, students, trainerId }) {
   const [form, setForm]       = useState({ studentId: "", amount: "", dueDate: "", description: "Mensalidade" });
@@ -115,7 +211,8 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [filter, setFilter]     = useState("all");
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen]     = useState(false);
+  const [editPayment, setEditPayment] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -240,16 +337,29 @@ export default function PaymentsPage() {
                   {STATUS[payment.status]?.label ?? payment.status}
                 </span>
                 {/* Actions */}
-                {payment.status === "pending" && (
-                  <div className="flex gap-1">
-                    <button onClick={() => markAsPaid(payment)} className="text-xs px-2.5 py-1 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 font-medium transition-colors whitespace-nowrap">
-                      Marcar pago
-                    </button>
-                    <button onClick={() => markAsOverdue(payment)} className="text-xs px-2.5 py-1 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 font-medium transition-colors whitespace-nowrap">
-                      Atrasado
-                    </button>
-                  </div>
-                )}
+                <div className="flex gap-1">
+                  {(payment.status === "pending" || payment.status === "overdue") && (
+                    <>
+                      <button onClick={() => markAsPaid(payment)} className="text-xs px-2.5 py-1 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 font-medium transition-colors whitespace-nowrap">
+                        Marcar pago
+                      </button>
+                      {payment.status === "pending" && (() => {
+                        const due = payment.dueDate?.toDate ? payment.dueDate.toDate() : new Date(payment.dueDate);
+                        return due < new Date();
+                      })() && (
+                        <button onClick={() => markAsOverdue(payment)} className="text-xs px-2.5 py-1 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 font-medium transition-colors whitespace-nowrap">
+                          Atrasado
+                        </button>
+                      )}
+                    </>
+                  )}
+                  <button onClick={() => setEditPayment(payment)} className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" title="Editar cobrança">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -261,6 +371,13 @@ export default function PaymentsPage() {
         onClose={() => setModalOpen(false)}
         students={students}
         trainerId={user?.uid}
+      />
+
+      <EditPaymentModal
+        open={!!editPayment}
+        onClose={() => setEditPayment(null)}
+        payment={editPayment}
+        students={students}
       />
     </div>
   );
