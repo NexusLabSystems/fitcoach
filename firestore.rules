@@ -1,0 +1,149 @@
+// firestore.rules
+// ─────────────────────────────────────────────────────────────
+// Cole essas regras em:
+// Firebase Console → Firestore Database → Rules
+// ─────────────────────────────────────────────────────────────
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Funções auxiliares ─────────────────────────────────────
+
+    // Verifica se o usuário está autenticado
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Retorna o perfil do usuário logado
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Verifica se é trainer
+    function isTrainer() {
+      return isAuth() && myProfile().role == 'trainer';
+    }
+
+    // Verifica se é aluno
+    function isStudent() {
+      return isAuth() && myProfile().role == 'student';
+    }
+
+    // Verifica se o trainer é dono do recurso
+    function isOwner(trainerId) {
+      return isAuth() && request.auth.uid == trainerId;
+    }
+
+    // Verifica se o aluno é dono do recurso
+    function isStudentOwner(studentId) {
+      return isAuth() && myProfile().studentId == studentId;
+    }
+
+    // ── users ──────────────────────────────────────────────────
+    // Cada usuário só lê e escreve o próprio perfil
+    match /users/{userId} {
+      allow read:   if isAuth() && request.auth.uid == userId;
+      allow create: if isAuth() && request.auth.uid == userId;
+      allow update: if isAuth() && request.auth.uid == userId
+                    && request.resource.data.role == resource.data.role; // não deixa mudar role
+    }
+
+    // ── students ───────────────────────────────────────────────
+    // Trainer: CRUD nos próprios alunos
+    // Aluno: lê apenas o próprio doc
+    match /students/{studentId} {
+      allow read:   if isOwner(resource.data.trainerId)
+                    || isStudentOwner(studentId);
+      allow create: if isTrainer();
+      allow update: if isOwner(resource.data.trainerId);
+      allow delete: if isOwner(resource.data.trainerId);
+    }
+
+    // ── workoutPlans ───────────────────────────────────────────
+    // Trainer: CRUD nos próprios planos
+    // Aluno: lê apenas planos vinculados a ele
+    match /workoutPlans/{planId} {
+      allow read:   if isOwner(resource.data.trainerId)
+                    || (isStudent() && isStudentOwner(resource.data.studentId));
+      allow create: if isTrainer();
+      allow update: if isOwner(resource.data.trainerId);
+      allow delete: if isOwner(resource.data.trainerId);
+    }
+
+    // ── exercises ──────────────────────────────────────────────
+    // Trainer: CRUD nos próprios exercícios
+    // Exercícios globais (trainerId == null): leitura para todos autenticados
+    // Aluno: apenas leitura
+    match /exercises/{exerciseId} {
+      allow read:   if isAuth();
+      allow create: if isTrainer();
+      allow update: if isTrainer() && isOwner(resource.data.trainerId);
+      allow delete: if isTrainer() && isOwner(resource.data.trainerId);
+    }
+
+    // ── assessments ────────────────────────────────────────────
+    // Trainer: CRUD nas próprias avaliações
+    // Aluno: lê apenas as próprias avaliações
+    match /assessments/{assessmentId} {
+      allow read:   if isOwner(resource.data.trainerId)
+                    || (isStudent() && isStudentOwner(resource.data.studentId));
+      allow create: if isTrainer();
+      allow update: if isOwner(resource.data.trainerId);
+      allow delete: if isOwner(resource.data.trainerId);
+    }
+
+    // ── evolutionPhotos ────────────────────────────────────────
+    match /evolutionPhotos/{photoId} {
+      allow read:   if isOwner(resource.data.trainerId)
+                    || (isStudent() && isStudentOwner(resource.data.studentId));
+      allow create: if isTrainer();
+      allow delete: if isOwner(resource.data.trainerId);
+    }
+
+    // ── payments ───────────────────────────────────────────────
+    // Só o trainer vê e gerencia pagamentos
+    match /payments/{paymentId} {
+      allow read:   if isOwner(resource.data.trainerId);
+      allow create: if isTrainer();
+      allow update: if isOwner(resource.data.trainerId);
+      allow delete: if isOwner(resource.data.trainerId);
+    }
+
+    // ── notifications ──────────────────────────────────────────
+    match /notifications/{notifId} {
+      allow read:   if isOwner(resource.data.trainerId);
+      allow create: if isTrainer();
+      allow update: if isOwner(resource.data.trainerId); // marcar como lida
+      allow delete: if isOwner(resource.data.trainerId);
+    }
+
+    // ── workoutLogs ────────────────────────────────────────────
+    // Aluno cria seus próprios logs
+    // Trainer lê logs dos seus alunos (via studentId)
+    match /workoutLogs/{logId} {
+      allow read:   if isAuth() && (
+                      resource.data.studentId == myProfile().studentId
+                      || isTrainer()
+                    );
+      allow create: if isStudent()
+                    && request.resource.data.studentId == myProfile().studentId;
+      allow update: if false; // logs são imutáveis
+      allow delete: if false;
+    }
+
+    // ── invites ────────────────────────────────────────────────
+    // Trainer cria convites
+    // Qualquer autenticado lê (para validar o token na página de convite)
+    // Aluno atualiza para aceitar
+    match /invites/{inviteId} {
+      allow read:   if isAuth();
+      allow create: if isTrainer();
+      allow update: if isAuth()
+                    && resource.data.status == 'pending'
+                    && request.resource.data.status == 'accepted';
+      allow delete: if isOwner(resource.data.trainerId);
+    }
+
+  }
+}

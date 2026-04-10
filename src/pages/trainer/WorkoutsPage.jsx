@@ -4,7 +4,7 @@ import { useNavigate }       from "react-router-dom";
 import { useWorkouts }       from "@/hooks/useWorkouts";
 import { useStudents }       from "@/hooks/useStudents";
 import EmptyState            from "@/components/ui/EmptyState";
-import Avatar                from "@/components/ui/Avatar";
+import Modal                 from "@/components/ui/Modal";
 import toast                 from "react-hot-toast";
 import { format }            from "date-fns";
 import { ptBR }              from "date-fns/locale";
@@ -21,7 +21,49 @@ const STATUS_LABEL = {
   draft:    "Rascunho",
 };
 
-function PlanCard({ plan, studentName, onDelete }) {
+function DuplicateModal({ open, onClose, plan, students, onConfirm }) {
+  const [studentId, setStudentId] = useState("");
+  const [loading, setLoading]     = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await onConfirm(plan, studentId || null);
+      toast.success("Plano duplicado!");
+      onClose();
+      setStudentId("");
+    } catch { toast.error("Erro ao duplicar."); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Duplicar plano">
+      <form onSubmit={handleSubmit}>
+        <Modal.Body className="flex flex-col gap-4">
+          <p className="text-sm text-gray-500">Duplicando: <span className="font-medium text-gray-900">{plan?.name}</span></p>
+          <div>
+            <label className="label">Atribuir ao aluno (opcional)</label>
+            <select value={studentId} onChange={e => setStudentId(e.target.value)} className="input" disabled={loading}>
+              <option value="">Sem aluno vinculado</option>
+              {students.filter(s => s.status === "active").map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <button type="button" onClick={onClose} className="btn-secondary" disabled={loading}>Cancelar</button>
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Duplicando...</> : "Duplicar"}
+          </button>
+        </Modal.Footer>
+      </form>
+    </Modal>
+  );
+}
+
+function PlanCard({ plan, studentName, onDelete, onDuplicate }) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -70,6 +112,12 @@ function PlanCard({ plan, studentName, onDelete }) {
                 >
                   Editar treino
                 </button>
+                <button
+                  onClick={() => { setMenuOpen(false); onDuplicate(plan); }}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Duplicar
+                </button>
                 <div className="border-t border-gray-100" />
                 <button
                   onClick={() => { setMenuOpen(false); onDelete(plan); }}
@@ -105,10 +153,11 @@ function PlanCard({ plan, studentName, onDelete }) {
 }
 
 export default function WorkoutsPage() {
-  const navigate               = useNavigate();
-  const { plans, loading, deletePlan } = useWorkouts();
-  const { students }           = useStudents();
-  const [search, setSearch]    = useState("");
+  const navigate                       = useNavigate();
+  const { plans, loading, deletePlan, duplicatePlan } = useWorkouts();
+  const { students }                   = useStudents();
+  const [search, setSearch]            = useState("");
+  const [duplicating, setDuplicating]  = useState(null);
 
   const studentMap = useMemo(() => {
     return Object.fromEntries(students.map(s => [s.id, s.name]));
@@ -190,17 +239,26 @@ export default function WorkoutsPage() {
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" onClick={() => {}}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(plan => (
             <PlanCard
               key={plan.id}
               plan={plan}
               studentName={studentMap[plan.studentId]}
               onDelete={handleDelete}
+              onDuplicate={setDuplicating}
             />
           ))}
         </div>
       )}
+
+      <DuplicateModal
+        open={!!duplicating}
+        onClose={() => setDuplicating(null)}
+        plan={duplicating}
+        students={students}
+        onConfirm={duplicatePlan}
+      />
     </div>
   );
 }

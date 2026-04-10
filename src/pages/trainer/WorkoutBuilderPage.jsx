@@ -6,6 +6,20 @@ import { useWorkouts }             from "@/hooks/useWorkouts";
 import { useStudents }             from "@/hooks/useStudents";
 import toast                       from "react-hot-toast";
 import clsx                        from "clsx";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // Biblioteca vinda do Firestore via hook
 
@@ -21,9 +35,30 @@ const uid = () => `item_${Date.now()}_${_uid++}`;
 // ── ExerciseRow ────────────────────────────────────────────────
 function ExerciseRow({ item, index, onUpdate, onRemove }) {
   const [open, setOpen] = useState(false);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
   return (
-    <div className="overflow-hidden bg-white border border-gray-200 rounded-xl">
+    <div ref={setNodeRef} style={style} className="overflow-hidden bg-white border border-gray-200 rounded-xl">
       <div className="flex items-center gap-3 px-4 py-3">
+        {/* Drag handle */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="flex-shrink-0 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
+          tabIndex={-1}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
+            <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+            <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+          </svg>
+        </button>
         <span className="flex items-center justify-center flex-shrink-0 w-5 h-5 text-xs font-semibold rounded-full bg-brand-100 text-brand-600">
           {index + 1}
         </span>
@@ -102,6 +137,8 @@ export default function WorkoutBuilderPage() {
   const [saving, setSaving]         = useState(false);
   const [loading, setLoading]       = useState(!!id);
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
   // Inicializa activeDay
   useEffect(() => { if (days.length > 0 && !activeDay) setActiveDay(days[0].id); }, [days]);
 
@@ -166,6 +203,16 @@ export default function WorkoutBuilderPage() {
   const removeExercise = useCallback((itemId) => {
     setDays(prev => prev.map(d => ({ ...d, exercises: d.exercises.filter(e => e.id !== itemId) })));
   }, []);
+
+  const handleDragEnd = useCallback(({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    setDays(prev => prev.map(d => {
+      if (d.id !== activeDay) return d;
+      const oldIndex = d.exercises.findIndex(e => e.id === active.id);
+      const newIndex = d.exercises.findIndex(e => e.id === over.id);
+      return { ...d, exercises: arrayMove(d.exercises, oldIndex, newIndex) };
+    }));
+  }, [activeDay]);
 
   // ── Save ───────────────────────────────────────────────────
   async function handleSave() {
@@ -268,7 +315,7 @@ export default function WorkoutBuilderPage() {
               : `${currentDay?.exercises.length} exercício${currentDay?.exercises.length > 1 ? "s" : ""}`}
           </p>
 
-          {currentDay?.exercises.length === 0 ? (
+          {!currentDay || currentDay.exercises.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-gray-200 border-dashed rounded-2xl">
               <div className="flex items-center justify-center w-12 h-12 mb-3 rounded-2xl bg-brand-50">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="1.5" strokeLinecap="round">
@@ -278,12 +325,16 @@ export default function WorkoutBuilderPage() {
               <p className="text-sm text-gray-400">Escolha um exercício na biblioteca</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
-              {currentDay?.exercises.map((item, i) => (
-                <ExerciseRow key={item.id} item={item} index={i}
-                  onUpdate={updateExercise} onRemove={removeExercise} />
-              ))}
-            </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={currentDay.exercises.map(e => e.id)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-2">
+                  {currentDay.exercises.map((item, i) => (
+                    <ExerciseRow key={item.id} item={item} index={i}
+                      onUpdate={updateExercise} onRemove={removeExercise} />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </section>
 

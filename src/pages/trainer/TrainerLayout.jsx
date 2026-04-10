@@ -3,6 +3,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth }          from "@/contexts/AuthContext";
 import NotificationBell     from "@/components/ui/NotificationBell";
+import GlobalSearch         from "@/components/ui/GlobalSearch";
 import toast                from "react-hot-toast";
 import clsx                 from "clsx";
 
@@ -193,6 +194,7 @@ export default function TrainerLayout() {
 
           {/* Right side */}
           <div className="flex items-center gap-2 ml-auto">
+            <GlobalSearch />
             <NotificationBell />
           </div>
         </header>

@@ -61,5 +61,19 @@ export function useWorkouts() {
     return { id: snap.id, ...snap.data() };
   }, []);
 
-  return { plans, loading, createPlan, updatePlan, deletePlan, getPlan };
+  // ── Duplicar plano ─────────────────────────────────────────
+  const duplicatePlan = useCallback(async (plan, newStudentId) => {
+    const ref = await addDoc(collection(db, "workoutPlans"), {
+      name:      `${plan.name} (cópia)`,
+      trainerId: user.uid,
+      studentId: newStudentId ?? null,
+      days:      plan.days ?? [],
+      status:    "active",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return ref.id;
+  }, [user]);
+
+  return { plans, loading, createPlan, updatePlan, deletePlan, getPlan, duplicatePlan };
 }

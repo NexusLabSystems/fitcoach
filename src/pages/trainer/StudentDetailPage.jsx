@@ -37,7 +37,7 @@ export default function StudentDetailPage() {
   const navigate = useNavigate();
   const { getStudent, archiveStudent, reactivateStudent } = useStudents();
   const { createInvite } = useInvite();
-  const { profile: trainerProfile } = useAuth();
+  const { user, profile: trainerProfile } = useAuth();
 
   const [student, setStudent]       = useState(null);
   const [loading, setLoading]       = useState(true);
@@ -52,26 +52,34 @@ export default function StudentDetailPage() {
   useEffect(() => { fetchStudent(); }, [id]);
 
   useEffect(() => {
-    if (tab !== "workouts" || !id) return;
+    if (tab !== "workouts" || !id || !user) return;
     setWorkoutsLoading(true);
-    getDocs(query(collection(db, "workoutPlans"), where("studentId", "==", id)))
+    getDocs(query(
+      collection(db, "workoutPlans"),
+      where("trainerId", "==", user.uid),
+      where("studentId", "==", id),
+    ))
       .then(snap => setWorkouts(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-      .catch(() => {})
+      .catch(err => console.error("Erro ao buscar treinos:", err))
       .finally(() => setWorkoutsLoading(false));
-  }, [tab, id]);
+  }, [tab, id, user]);
 
   useEffect(() => {
-    if (tab !== "payments" || !id) return;
+    if (tab !== "payments" || !id || !user) return;
     setPaymentsLoading(true);
-    getDocs(query(collection(db, "payments"), where("studentId", "==", id)))
+    getDocs(query(
+      collection(db, "payments"),
+      where("trainerId", "==", user.uid),
+      where("studentId", "==", id),
+    ))
       .then(snap => {
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         data.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
         setPayments(data);
       })
-      .catch(() => {})
+      .catch(err => console.error("Erro ao buscar cobranças:", err))
       .finally(() => setPaymentsLoading(false));
-  }, [tab, id]);
+  }, [tab, id, user]);
 
   async function fetchStudent() {
     try {
