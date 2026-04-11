@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Gerar ícones FitCoach</title></head>
+<body style="font-family:sans-serif;padding:32px;background:#f3f4f6">
+  <h2 style="margin-bottom:8px">Ícones PWA — FitCoach</h2>
+  <p style="color:#6b7280;margin-bottom:32px">Clique em cada botão para baixar e salve em <code>public/icons/</code></p>
+
+  <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+    <div style="text-align:center">
+      <canvas id="c192" width="192" height="192" style="display:block;border-radius:24px;box-shadow:0 4px 12px rgba(0,0,0,.15)"></canvas>
+      <button onclick="download('c192','icon-192.png')" style="margin-top:12px;padding:10px 20px;background:#FF5722;color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600">Baixar icon-192.png</button>
+    </div>
+    <div style="text-align:center">
+      <canvas id="c512" width="512" height="512" style="display:block;border-radius:64px;box-shadow:0 4px 12px rgba(0,0,0,.15);width:192px;height:192px"></canvas>
+      <button onclick="download('c512','icon-512.png')" style="margin-top:12px;padding:10px 20px;background:#FF5722;color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600">Baixar icon-512.png</button>
+    </div>
+  </div>
+
+  <script>
+    function drawIcon(canvas) {
+      const s   = canvas.width;
+      const ctx = canvas.getContext('2d');
+
+      // ── Fundo arredondado ──────────────────────────────────────
+      const r = s * 0.22;
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.arcTo(s, 0, s, s, r);
+      ctx.arcTo(s, s, 0, s, r);
+      ctx.arcTo(0, s, 0, 0, r);
+      ctx.arcTo(0, 0, s, 0, r);
+      ctx.closePath();
+      ctx.fillStyle = '#FF5722';
+      ctx.fill();
+
+      // ── Haltere ────────────────────────────────────────────────
+      // Proporções relativas ao tamanho do canvas
+      const lw  = s * 0.10;   // espessura das linhas (grossa)
+      const cx  = s * 0.50;   // centro x
+      const cy  = s * 0.50;   // centro y
+      const bx  = s * 0.19;   // metade da barra central
+      const ph  = s * 0.22;   // meia-altura das placas externas
+      const pi  = s * 0.15;   // meia-altura das placas internas
+      const gap = s * 0.07;   // distância entre placa e barra
+
+      ctx.strokeStyle = 'white';
+      ctx.lineCap     = 'round';
+      ctx.lineJoin    = 'round';
+
+      // Barra central
+      ctx.lineWidth = lw * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(cx - bx + gap, cy);
+      ctx.lineTo(cx + bx - gap, cy);
+      ctx.stroke();
+
+      // Placa interna esquerda
+      ctx.lineWidth = lw * 0.85;
+      ctx.beginPath();
+      ctx.moveTo(cx - bx + gap, cy - pi);
+      ctx.lineTo(cx - bx + gap, cy + pi);
+      ctx.stroke();
+
+      // Placa externa esquerda
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      ctx.moveTo(cx - bx, cy - ph);
+      ctx.lineTo(cx - bx, cy + ph);
+      ctx.stroke();
+
+      // Placa interna direita
+      ctx.lineWidth = lw * 0.85;
+      ctx.beginPath();
+      ctx.moveTo(cx + bx - gap, cy - pi);
+      ctx.lineTo(cx + bx - gap, cy + pi);
+      ctx.stroke();
+
+      // Placa externa direita
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      ctx.moveTo(cx + bx, cy - ph);
+      ctx.lineTo(cx + bx, cy + ph);
+      ctx.stroke();
+    }
+
+    drawIcon(document.getElementById('c192'));
+    drawIcon(document.getElementById('c512'));
+
+    function download(id, filename) {
+      const a     = document.createElement('a');
+      a.href      = document.getElementById(id).toDataURL('image/png');
+      a.download  = filename;
+      a.click();
+    }
+  </script>
+</body>
+</html>
