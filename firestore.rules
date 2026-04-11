@@ -51,10 +51,11 @@ service cloud.firestore {
 
     // ── students ───────────────────────────────────────────────
     // Trainer: CRUD nos próprios alunos
-    // Aluno: lê apenas o próprio doc
+    // Aluno: lê o próprio doc (por ID ou por email — necessário no registro/refresh)
     match /students/{studentId} {
       allow read:   if isOwner(resource.data.trainerId)
-                    || isStudentOwner(studentId);
+                    || isStudentOwner(studentId)
+                    || (isStudent() && resource.data.email == request.auth.token.email);
       allow create: if isTrainer();
       allow update: if isOwner(resource.data.trainerId);
       allow delete: if isOwner(resource.data.trainerId);
@@ -78,7 +79,7 @@ service cloud.firestore {
     match /exercises/{exerciseId} {
       allow read:   if isAuth();
       allow create: if isTrainer();
-      allow update: if isTrainer() && isOwner(resource.data.trainerId);
+      allow update: if isTrainer() && (isOwner(resource.data.trainerId) || resource.data.trainerId == null);
       allow delete: if isTrainer() && isOwner(resource.data.trainerId);
     }
 
@@ -119,15 +120,15 @@ service cloud.firestore {
     }
 
     // ── workoutLogs ────────────────────────────────────────────
-    // Aluno cria seus próprios logs
-    // Trainer lê logs dos seus alunos (via studentId)
+    // Aluno cria seus próprios logs (studentId == uid do Firebase Auth)
+    // Trainer lê logs dos seus alunos
     match /workoutLogs/{logId} {
       allow read:   if isAuth() && (
-                      resource.data.studentId == myProfile().studentId
+                      resource.data.studentId == request.auth.uid
                       || isTrainer()
                     );
       allow create: if isStudent()
-                    && request.resource.data.studentId == myProfile().studentId;
+                    && request.resource.data.studentId == request.auth.uid;
       allow update: if false; // logs são imutáveis
       allow delete: if false;
     }

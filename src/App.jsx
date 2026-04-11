@@ -24,11 +24,12 @@ import SettingsPage       from "@/pages/trainer/SettingsPage";
 import OfflineBanner      from "@/components/ui/OfflineBanner";
 
 // Student
-import StudentLayout   from "@/pages/student/StudentLayout";
-import StudentHome     from "@/pages/student/StudentHome";
-import StudentProgress from "@/pages/student/StudentProgress";
-import StudentMedals   from "@/pages/student/StudentMedals";
-import StudentProfile  from "@/pages/student/StudentProfile";
+import StudentLayout    from "@/pages/student/StudentLayout";
+import StudentDashboard from "@/pages/student/StudentDashboard";
+import StudentHome      from "@/pages/student/StudentHome";
+import StudentProgress  from "@/pages/student/StudentProgress";
+import StudentMedals    from "@/pages/student/StudentMedals";
+import StudentProfile   from "@/pages/student/StudentProfile";
 
 export default function App() {
   return (
@@ -74,7 +75,8 @@ export default function App() {
           {/* Student */}
           <Route element={<ProtectedRoute role="student" />}>
             <Route path="/student" element={<StudentLayout />}>
-              <Route index              element={<StudentHome />} />
+              <Route index              element={<StudentDashboard />} />
+              <Route path="workout"     element={<StudentHome />} />
               <Route path="progress"    element={<StudentProgress />} />
               <Route path="medals"      element={<StudentMedals />} />
               <Route path="profile"     element={<StudentProfile />} />

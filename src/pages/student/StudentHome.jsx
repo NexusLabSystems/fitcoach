@@ -9,7 +9,7 @@ import clsx   from "clsx";
 
 function getYouTubeId(url) {
   if (!url) return null;
-  const m = url.match(/(?:youtu\.be\/|v=)([^&\s]+)/);
+  const m = url.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
 }
 

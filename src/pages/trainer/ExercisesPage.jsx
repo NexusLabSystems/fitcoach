@@ -2,6 +2,7 @@
 import { useState, useMemo } from "react";
 import { useExercises, MUSCLE_GROUPS } from "@/hooks/useExercises";
 import ExerciseFormModal from "@/components/exercises/ExerciseFormModal";
+import VideoModal, { youtubeThumbnail } from "@/components/ui/VideoModal";
 import EmptyState        from "@/components/ui/EmptyState";
 import toast             from "react-hot-toast";
 import clsx              from "clsx";
@@ -26,23 +27,17 @@ const GROUP_COLORS = {
 };
 
 // ── Exercise card ──────────────────────────────────────────────
-function ExerciseCard({ exercise, onEdit, onDelete, isOwned }) {
+function ExerciseCard({ exercise, onEdit, onDelete, onPlay, isOwned }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const groupStyle = GROUP_COLORS[exercise.muscleGroup] ?? GROUP_COLORS.Outro;
-
-  // Detecta thumbnail do YouTube
-  const youtubeThumbnail = (() => {
-    if (!exercise.videoUrl) return null;
-    const m = exercise.videoUrl.match(/(?:youtu\.be\/|v=)([^&\s]+)/);
-    return m ? `https://img.youtube.com/vi/${m[1]}/mqdefault.jpg` : null;
-  })();
+  const groupStyle  = GROUP_COLORS[exercise.muscleGroup] ?? GROUP_COLORS.Outro;
+  const thumbnail   = youtubeThumbnail(exercise.videoUrl);
 
   return (
     <div className="overflow-hidden transition-shadow card hover:shadow-md">
       {/* Thumbnail / placeholder */}
       <div className="relative overflow-hidden bg-gray-100 aspect-video">
-        {youtubeThumbnail ? (
-          <img src={youtubeThumbnail} alt={exercise.name}
+        {thumbnail ? (
+          <img src={thumbnail} alt={exercise.name}
             className="object-cover w-full h-full" loading="lazy" />
         ) : (
           <div className="flex items-center justify-center w-full h-full">
@@ -52,15 +47,16 @@ function ExerciseCard({ exercise, onEdit, onDelete, isOwned }) {
           </div>
         )}
         {exercise.videoUrl && (
-          <a href={exercise.videoUrl} target="_blank" rel="noreferrer"
+          <button
+            onClick={() => onPlay(exercise)}
             className="absolute inset-0 flex items-center justify-center transition-colors bg-black/0 hover:bg-black/30 group"
-            onClick={e => e.stopPropagation()}>
+          >
             <div className="flex items-center justify-center w-10 h-10 transition-opacity rounded-full opacity-0 bg-white/90 group-hover:opacity-100">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="#FF5722">
                 <path d="M5 3l14 9-14 9V3z"/>
               </svg>
             </div>
-          </a>
+          </button>
         )}
       </div>
 
@@ -126,10 +122,11 @@ function ExerciseCard({ exercise, onEdit, onDelete, isOwned }) {
 // ── Main page ──────────────────────────────────────────────────
 export default function ExercisesPage() {
   const { exercises, loading, deleteExercise } = useExercises();
-  const [search, setSearch]       = useState("");
-  const [groupFilter, setGroup]   = useState("Todos");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editExercise, setEdit]   = useState(null);
+  const [search, setSearch]         = useState("");
+  const [groupFilter, setGroup]     = useState("Todos");
+  const [modalOpen, setModalOpen]   = useState(false);
+  const [editExercise, setEdit]     = useState(null);
+  const [videoExercise, setVideo]   = useState(null);
 
   const filtered = useMemo(() => {
     return exercises.filter(ex => {
@@ -226,6 +223,7 @@ export default function ExercisesPage() {
               isOwned={!!ex.trainerId}
               onEdit={openEdit}
               onDelete={handleDelete}
+              onPlay={setVideo}
             />
           ))}
         </div>
@@ -235,6 +233,13 @@ export default function ExercisesPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         exercise={editExercise}
+      />
+
+      <VideoModal
+        open={!!videoExercise}
+        onClose={() => setVideo(null)}
+        title={videoExercise?.name}
+        videoUrl={videoExercise?.videoUrl}
       />
     </div>
   );

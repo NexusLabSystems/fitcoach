@@ -6,6 +6,7 @@ import { useWorkouts }             from "@/hooks/useWorkouts";
 import { useStudents }             from "@/hooks/useStudents";
 import toast                       from "react-hot-toast";
 import clsx                        from "clsx";
+import VideoModal, { youtubeThumbnail } from "@/components/ui/VideoModal";
 import {
   DndContext,
   closestCenter,
@@ -33,7 +34,7 @@ let _uid = 1;
 const uid = () => `item_${Date.now()}_${_uid++}`;
 
 // ── ExerciseRow ────────────────────────────────────────────────
-function ExerciseRow({ item, index, onUpdate, onRemove }) {
+function ExerciseRow({ item, index, onUpdate, onRemove, onPlay }) {
   const [open, setOpen] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
 
@@ -66,6 +67,13 @@ function ExerciseRow({ item, index, onUpdate, onRemove }) {
           <p className="text-sm font-medium text-gray-900 truncate">{item.exercise.name}</p>
           <p className="text-xs text-gray-400">{item.sets}×{item.reps} · {item.load ? `${item.load}kg · ` : ""}{item.rest}s descanso</p>
         </div>
+        {item.exercise.videoUrl && (
+          <button onClick={() => onPlay(item.exercise)} className="flex items-center justify-center text-gray-400 rounded-lg w-7 h-7 hover:text-brand-500 hover:bg-brand-50">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M5 3l14 9-14 9V3z"/>
+            </svg>
+          </button>
+        )}
         <button onClick={() => setOpen(v => !v)} className="flex items-center justify-center text-gray-400 rounded-lg w-7 h-7 hover:bg-gray-100">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d={open ? "M18 15l-6-6-6 6" : "M6 9l6 6 6-6"}/>
@@ -136,6 +144,7 @@ export default function WorkoutBuilderPage() {
   const [search, setSearch]         = useState("");
   const [saving, setSaving]         = useState(false);
   const [loading, setLoading]       = useState(!!id);
+  const [videoExercise, setVideo]   = useState(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -330,7 +339,7 @@ export default function WorkoutBuilderPage() {
                 <div className="flex flex-col gap-2">
                   {currentDay.exercises.map((item, i) => (
                     <ExerciseRow key={item.id} item={item} index={i}
-                      onUpdate={updateExercise} onRemove={removeExercise} />
+                      onUpdate={updateExercise} onRemove={removeExercise} onPlay={setVideo} />
                   ))}
                 </div>
               </SortableContext>
@@ -368,11 +377,34 @@ export default function WorkoutBuilderPage() {
 
           <div className="flex flex-col flex-1 gap-2 p-3 overflow-y-auto">
             {filteredExercises.map(ex => {
-              const added = currentDay?.exercises.some(e => e.exercise.id === ex.id);
+              const added     = currentDay?.exercises.some(e => e.exercise.id === ex.id);
+              const thumbnail = youtubeThumbnail(ex.videoUrl);
               return (
                 <div key={ex.id} className={clsx("flex items-center gap-3 p-2.5 rounded-xl border transition-colors",
                   added ? "border-gray-100 opacity-40" : "border-gray-100 hover:border-brand-200 hover:bg-orange-50 cursor-pointer"
                 )} onClick={() => !added && addExercise(ex)}>
+                  {/* Thumbnail mini */}
+                  {thumbnail ? (
+                    <div className="relative flex-shrink-0 w-10 h-10 overflow-hidden rounded-lg bg-gray-100">
+                      <img src={thumbnail} alt={ex.name} className="object-cover w-full h-full" loading="lazy" />
+                      {ex.videoUrl && (
+                        <button
+                          onClick={e => { e.stopPropagation(); setVideo(ex); }}
+                          className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/50 transition-colors"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                            <path d="M5 3l14 9-14 9V3z"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.8" strokeLinecap="round">
+                        <path d="M6 4v16M18 4v16M6 12h12M3 8h3M18 8h3M3 16h3M18 16h3"/>
+                      </svg>
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{ex.name}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
@@ -393,6 +425,13 @@ export default function WorkoutBuilderPage() {
           </div>
         </aside>
       </div>
+
+      <VideoModal
+        open={!!videoExercise}
+        onClose={() => setVideo(null)}
+        title={videoExercise?.name}
+        videoUrl={videoExercise?.videoUrl}
+      />
     </div>
   );
 }

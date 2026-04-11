@@ -1,5 +1,5 @@
 // src/pages/auth/LoginPage.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import toast from "react-hot-toast";
@@ -10,8 +10,27 @@ export default function LoginPage() {
   const location  = useLocation();
   const from      = location.state?.from?.pathname ?? "/trainer";
 
-  const [form, setForm]     = useState({ email: "", password: "" });
+  const [form, setForm]       = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const isInstalled = window.matchMedia("(display-mode: standalone)").matches
+                   || window.navigator.standalone;
+
+  useEffect(() => {
+    function handler(e) {
+      e.preventDefault();
+      setInstallPrompt(e);
+    }
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  async function handleInstall() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") setInstallPrompt(null);
+  }
 
   function handleChange(e) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -136,6 +155,19 @@ export default function LoginPage() {
               Criar conta grátis
             </Link>
           </p>
+
+          {!isInstalled && installPrompt && (
+            <button
+              onClick={handleInstall}
+              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-200 text-brand-600 text-sm font-medium hover:bg-brand-50 transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 2v13M8 11l4 4 4-4"/>
+                <path d="M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2"/>
+              </svg>
+              Baixar APP
+            </button>
+          )}
         </div>
       </div>
     </div>
