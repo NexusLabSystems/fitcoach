@@ -27,18 +27,37 @@ export function useExercises() {
 
   useEffect(() => {
     if (!user) return;
-    // Busca exercícios do trainer + exercícios globais (trainerId == null)
-    const q = query(
-      collection(db, "exercises"),
-      where("trainerId", "in", [user.uid, null])
-    );
-    const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Duas queries separadas: próprios + globais (null no "in" é instável em prod)
+    const qOwn    = query(collection(db, "exercises"), where("trainerId", "==", user.uid));
+    const qGlobal = query(collection(db, "exercises"), where("trainerId", "==", null));
+
+    let own    = [];
+    let global = [];
+    let loaded = 0;
+
+    function merge() {
+      const map  = new Map();
+      [...global, ...own].forEach(ex => map.set(ex.id, ex));
+      const data = Array.from(map.values());
       data.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
       setExercises(data);
       setLoading(false);
+    }
+
+    const unsubOwn = onSnapshot(qOwn, snap => {
+      own = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      loaded |= 1;
+      merge();
     });
-    return unsub;
+
+    const unsubGlobal = onSnapshot(qGlobal, snap => {
+      global = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      loaded |= 2;
+      merge();
+    });
+
+    return () => { unsubOwn(); unsubGlobal(); };
   }, [user]);
 
   const createExercise = useCallback(async (data) => {
