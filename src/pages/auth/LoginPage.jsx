@@ -1,5 +1,5 @@
 // src/pages/auth/LoginPage.jsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import toast from "react-hot-toast";
@@ -12,24 +12,21 @@ export default function LoginPage() {
 
   const [form, setForm]       = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [installPrompt, setInstallPrompt] = useState(null);
-  const isInstalled = window.matchMedia("(display-mode: standalone)").matches
-                   || window.navigator.standalone;
+  const [showIosGuide, setShowIosGuide] = useState(false);
 
-  useEffect(() => {
-    function handler(e) {
-      e.preventDefault();
-      setInstallPrompt(e);
-    }
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+  const isInstalled = window.matchMedia("(display-mode: standalone)").matches
+                   || !!window.navigator.standalone;
+  const isIos     = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const showInstallBtn = !isInstalled && (isIos || isAndroid || !!window.__pwaPrompt);
 
   async function handleInstall() {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === "accepted") setInstallPrompt(null);
+    if (isIos) { setShowIosGuide(true); return; }
+    const prompt = window.__pwaPrompt;
+    if (!prompt) return;
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === "accepted") window.__pwaPrompt = null;
   }
 
   function handleChange(e) {
@@ -156,7 +153,7 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          {!isInstalled && installPrompt && (
+          {showInstallBtn && (
             <button
               onClick={handleInstall}
               className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-200 text-brand-600 text-sm font-medium hover:bg-brand-50 transition-colors"
@@ -167,6 +164,36 @@ export default function LoginPage() {
               </svg>
               Baixar APP
             </button>
+          )}
+
+          {/* Guia iOS — modal simples */}
+          {showIosGuide && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4"
+              onClick={() => setShowIosGuide(false)}>
+              <div className="bg-white rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                <h3 className="text-base font-bold text-gray-900 mb-1">Instalar no iPhone / iPad</h3>
+                <p className="text-sm text-gray-500 mb-4">Siga os passos abaixo no Safari:</p>
+                <ol className="flex flex-col gap-3 text-sm text-gray-700">
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                    Toque no botão <strong className="mx-1">Compartilhar</strong>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0 mt-0.5">
+                      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
+                    </svg>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                    Role a lista e toque em <strong className="ml-1">Adicionar à Tela de Início</strong>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                    Toque em <strong className="ml-1">Adicionar</strong> no canto superior direito
+                  </li>
+                </ol>
+                <button onClick={() => setShowIosGuide(false)}
+                  className="mt-5 w-full py-2.5 btn-primary">Entendi</button>
+              </div>
+            </div>
           )}
         </div>
       </div>

@@ -19,6 +19,13 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Captura o evento de instalação PWA antes do React carregar -->
+    <script>
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.__pwaPrompt = e;
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
