@@ -12,21 +12,25 @@ export default function LoginPage() {
 
   const [form, setForm]       = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [showIosGuide, setShowIosGuide] = useState(false);
+  const [showGuide, setShowGuide] = useState(null); // "ios" | "android" | null
 
   const isInstalled = window.matchMedia("(display-mode: standalone)").matches
                    || !!window.navigator.standalone;
   const isIos     = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isAndroid = /android/i.test(navigator.userAgent);
-  const showInstallBtn = !isInstalled && (isIos || isAndroid || !!window.__pwaPrompt);
+  const isMobile  = isIos || isAndroid;
+  const showInstallBtn = !isInstalled && isMobile;
 
   async function handleInstall() {
-    if (isIos) { setShowIosGuide(true); return; }
-    const prompt = window.__pwaPrompt;
-    if (!prompt) return;
-    prompt.prompt();
-    const { outcome } = await prompt.userChoice;
-    if (outcome === "accepted") window.__pwaPrompt = null;
+    // Android com prompt nativo disponível
+    if (isAndroid && window.__pwaPrompt) {
+      window.__pwaPrompt.prompt();
+      const { outcome } = await window.__pwaPrompt.userChoice;
+      if (outcome === "accepted") window.__pwaPrompt = null;
+      return;
+    }
+    // iOS ou Android sem prompt → mostra instruções manuais
+    setShowGuide(isIos ? "ios" : "android");
   }
 
   function handleChange(e) {
@@ -166,31 +170,55 @@ export default function LoginPage() {
             </button>
           )}
 
-          {/* Guia iOS — modal simples */}
-          {showIosGuide && (
+          {/* Guia de instalação manual */}
+          {showGuide && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4"
-              onClick={() => setShowIosGuide(false)}>
+              onClick={() => setShowGuide(null)}>
               <div className="bg-white rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-                <h3 className="text-base font-bold text-gray-900 mb-1">Instalar no iPhone / iPad</h3>
-                <p className="text-sm text-gray-500 mb-4">Siga os passos abaixo no Safari:</p>
-                <ol className="flex flex-col gap-3 text-sm text-gray-700">
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
-                    Toque no botão <strong className="mx-1">Compartilhar</strong>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0 mt-0.5">
-                      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
-                    </svg>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
-                    Role a lista e toque em <strong className="ml-1">Adicionar à Tela de Início</strong>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
-                    Toque em <strong className="ml-1">Adicionar</strong> no canto superior direito
-                  </li>
-                </ol>
-                <button onClick={() => setShowIosGuide(false)}
+                {showGuide === "ios" ? (
+                  <>
+                    <h3 className="text-base font-bold text-gray-900 mb-1">Instalar no iPhone / iPad</h3>
+                    <p className="text-sm text-gray-500 mb-4">Siga os passos abaixo no Safari:</p>
+                    <ol className="flex flex-col gap-3 text-sm text-gray-700">
+                      <li className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                        <span>Toque no botão <strong>Compartilhar</strong>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="2" strokeLinecap="round" className="inline ml-1 mb-0.5">
+                            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
+                          </svg>
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                        <span>Role e toque em <strong>Adicionar à Tela de Início</strong></span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                        <span>Toque em <strong>Adicionar</strong> no canto superior direito</span>
+                      </li>
+                    </ol>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-base font-bold text-gray-900 mb-1">Instalar no Android</h3>
+                    <p className="text-sm text-gray-500 mb-4">Siga os passos abaixo no Chrome:</p>
+                    <ol className="flex flex-col gap-3 text-sm text-gray-700">
+                      <li className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                        <span>Toque nos <strong>3 pontinhos</strong> (⋮) no canto superior direito</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                        <span>Toque em <strong>Adicionar à tela inicial</strong></span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                        <span>Confirme tocando em <strong>Adicionar</strong></span>
+                      </li>
+                    </ol>
+                  </>
+                )}
+                <button onClick={() => setShowGuide(null)}
                   className="mt-5 w-full py-2.5 btn-primary">Entendi</button>
               </div>
             </div>
