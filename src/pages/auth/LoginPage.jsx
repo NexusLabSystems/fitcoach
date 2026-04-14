@@ -22,14 +22,12 @@ export default function LoginPage() {
   const showInstallBtn = !isInstalled && isMobile;
 
   async function handleInstall() {
-    // Android com prompt nativo disponível
     if (isAndroid && window.__pwaPrompt) {
       window.__pwaPrompt.prompt();
       const { outcome } = await window.__pwaPrompt.userChoice;
       if (outcome === "accepted") window.__pwaPrompt = null;
       return;
     }
-    // iOS ou Android sem prompt → mostra instruções manuais
     setShowGuide(isIos ? "ios" : "android");
   }
 
@@ -170,7 +168,6 @@ export default function LoginPage() {
             </button>
           )}
 
-          {/* Guia de instalação manual */}
           {showGuide && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4"
               onClick={() => setShowGuide(null)}>
