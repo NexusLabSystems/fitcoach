@@ -50,6 +50,7 @@ export default defineConfig({
         // Não usa fallback para rotas de API/Firebase
         navigateFallbackDenylist: [
           /^\/api\//,
+          /^\/invite\//,
           /firestore\.googleapis\.com/,
           /identitytoolkit\.googleapis\.com/,
           /securetoken\.googleapis\.com/,
