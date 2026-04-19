@@ -11,7 +11,7 @@ export default function InvitePage() {
   const { token }    = useParams();
   const navigate     = useNavigate();
   const { getInvite, acceptInvite } = useInvite();
-  const { registerStudent, login, user, profile } = useAuth();
+  const { registerStudent, login, user, profile, refreshProfile } = useAuth();
 
   const [invite, setInvite]   = useState(null);
   const [status, setStatus]   = useState("loading"); // loading | valid | invalid | expired | accepted
@@ -45,17 +45,17 @@ export default function InvitePage() {
 
   async function handleLink(uid) {
     try {
-      // Linka o usuário ao studentId do convite
       await updateDoc(doc(db, "users", uid), {
         studentId: invite.studentId,
         updatedAt: serverTimestamp(),
       });
       await acceptInvite(invite.id, uid);
+      await refreshProfile(uid);
       toast.success("Vinculado com sucesso! Bem-vindo(a) 🎉");
-      navigate("/student", { replace: true });
     } catch {
-      toast.error("Erro ao vincular. Tente novamente.");
+      toast.error("Erro ao vincular. Verifique com seu personal.");
     }
+    navigate("/student", { replace: true });
   }
 
   async function handleRegister(e) {

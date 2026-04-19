@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
 
   async function refreshProfile(uid, email) {
     const snap = await getDoc(doc(db, "users", uid));
-    if (!snap.exists()) return;
+    if (!snap.exists()) return null;
 
     let data = snap.data();
 
@@ -61,6 +61,7 @@ export function AuthProvider({ children }) {
     }
 
     setProfile(data);
+    return data;
   }
 
   // ── Registrar trainer ──────────────────────────────────────
@@ -105,8 +106,8 @@ export function AuthProvider({ children }) {
   // ── Login ──────────────────────────────────────────────────
   async function login(email, password) {
     const cred = await signInWithEmailAndPassword(auth, email, password);
-    await refreshProfile(cred.user.uid, cred.user.email);
-    return cred;
+    const data = await refreshProfile(cred.user.uid, cred.user.email);
+    return { ...cred, profileRole: data?.role ?? null };
   }
 
   async function logout() { await signOut(auth); }

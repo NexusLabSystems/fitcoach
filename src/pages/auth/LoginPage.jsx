@@ -8,7 +8,7 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
-  const from      = location.state?.from?.pathname ?? "/trainer";
+  const from      = location.state?.from?.pathname;
 
   const [form, setForm]       = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -43,8 +43,9 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      await login(form.email, form.password);
-      navigate(from, { replace: true });
+      const result = await login(form.email, form.password);
+      const roleHome = result.profileRole === "student" ? "/student" : "/trainer";
+      navigate(from ?? roleHome, { replace: true });
     } catch (err) {
       const msgs = {
         "auth/invalid-credential":   "Email ou senha incorretos.",
