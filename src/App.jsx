@@ -26,7 +26,7 @@ import OfflineBanner      from "@/components/ui/OfflineBanner";
 // Student
 import StudentLayout    from "@/pages/student/StudentLayout";
 import StudentDashboard from "@/pages/student/StudentDashboard";
-import StudentHome      from "@/pages/student/StudentHome";
+import WorkoutPage      from "@/pages/student/WorkoutPage";
 import StudentProgress  from "@/pages/student/StudentProgress";
 import StudentMedals    from "@/pages/student/StudentMedals";
 import StudentProfile   from "@/pages/student/StudentProfile";
@@ -76,7 +76,7 @@ export default function App() {
           <Route element={<ProtectedRoute role="student" />}>
             <Route path="/student" element={<StudentLayout />}>
               <Route index              element={<StudentDashboard />} />
-              <Route path="workout"     element={<StudentHome />} />
+              <Route path="workout"     element={<WorkoutPage />} />
               <Route path="progress"    element={<StudentProgress />} />
               <Route path="medals"      element={<StudentMedals />} />
               <Route path="profile"     element={<StudentProfile />} />

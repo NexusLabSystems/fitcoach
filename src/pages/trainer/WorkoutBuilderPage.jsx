@@ -7,6 +7,7 @@ import { useStudents }             from "@/hooks/useStudents";
 import toast                       from "react-hot-toast";
 import clsx                        from "clsx";
 import VideoModal, { youtubeThumbnail } from "@/components/ui/VideoModal";
+import ExerciseFormModal from "@/components/exercises/ExerciseFormModal";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
 } from "@dnd-kit/core";
@@ -178,7 +179,11 @@ function ExerciseRow({ item, index, onUpdate, onRemove, onPlay, onBiset }) {
         </span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 truncate">{item.exercise.name}</p>
-          <p className="text-xs text-gray-400">{item.sets}×{item.reps} · {item.load ? `${item.load}kg · ` : ""}{item.rest}s descanso</p>
+          {item.exercise.muscleGroup === "Cardio" ? (
+            <p className="text-xs text-gray-400">{item.duration ?? 30} min{item.intensity ? ` · vel. ${item.intensity}` : ""} · {item.rest}s descanso</p>
+          ) : (
+            <p className="text-xs text-gray-400">{item.sets}×{item.reps} · {item.load ? `${item.load}kg · ` : ""}{item.rest}s descanso</p>
+          )}
         </div>
         {item.exercise.videoUrl && (
           <button onClick={() => onPlay(item.exercise)} className="flex items-center justify-center text-gray-400 rounded-lg w-7 h-7 hover:text-brand-500 hover:bg-brand-50">
@@ -207,40 +212,71 @@ function ExerciseRow({ item, index, onUpdate, onRemove, onPlay, onBiset }) {
       </div>
 
       {open && (
-        <div className="grid grid-cols-2 gap-3 p-4 border-t border-gray-100 bg-gray-50 sm:grid-cols-4">
-          <label className="flex flex-col gap-1">
-            <span className="label">Séries</span>
-            <input type="number" min="1" max="20" value={item.sets}
-              onChange={e => onUpdate(item.id, "sets", Number(e.target.value))}
-              className="input py-1.5 text-sm" />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="label">Reps</span>
-            <input type="text" value={item.reps} placeholder="12 ou 8-12"
-              onChange={e => onUpdate(item.id, "reps", e.target.value)}
-              className="input py-1.5 text-sm" />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="label">Carga (kg)</span>
-            <input type="number" min="0" step="2.5" value={item.load}
-              onChange={e => onUpdate(item.id, "load", e.target.value)}
-              className="input py-1.5 text-sm" />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="label">Descanso</span>
-            <select value={item.rest} onChange={e => onUpdate(item.id, "rest", Number(e.target.value))} className="input py-1.5 text-sm">
-              {[30,45,60,90,120,180].map(s => <option key={s} value={s}>{s}s</option>)}
-            </select>
-          </label>
-          <div className="col-span-2 sm:col-span-4">
+        item.exercise.muscleGroup === "Cardio" ? (
+          <div className="grid grid-cols-2 gap-3 p-4 border-t border-gray-100 bg-gray-50 sm:grid-cols-3">
             <label className="flex flex-col gap-1">
-              <span className="label">Observações</span>
-              <textarea rows={2} value={item.notes} placeholder="Ex: foco na fase excêntrica..."
-                onChange={e => onUpdate(item.id, "notes", e.target.value)}
-                className="text-sm resize-none input" />
+              <span className="label">Duração (min)</span>
+              <input type="number" min="1" max="180" value={item.duration ?? 30}
+                onChange={e => onUpdate(item.id, "duration", Number(e.target.value))}
+                className="input py-1.5 text-sm" />
             </label>
+            <label className="flex flex-col gap-1">
+              <span className="label">Velocidade / Nível</span>
+              <input type="text" value={item.intensity ?? ""} placeholder="Ex: 8 km/h, nível 5"
+                onChange={e => onUpdate(item.id, "intensity", e.target.value)}
+                className="input py-1.5 text-sm" />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="label">Descanso</span>
+              <select value={item.rest} onChange={e => onUpdate(item.id, "rest", Number(e.target.value))} className="input py-1.5 text-sm">
+                {[30,45,60,90,120,180].map(s => <option key={s} value={s}>{s}s</option>)}
+              </select>
+            </label>
+            <div className="col-span-2 sm:col-span-3">
+              <label className="flex flex-col gap-1">
+                <span className="label">Observações</span>
+                <textarea rows={2} value={item.notes} placeholder="Ex: manter frequência cardíaca entre 130-150 bpm..."
+                  onChange={e => onUpdate(item.id, "notes", e.target.value)}
+                  className="text-sm resize-none input" />
+              </label>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 p-4 border-t border-gray-100 bg-gray-50 sm:grid-cols-4">
+            <label className="flex flex-col gap-1">
+              <span className="label">Séries</span>
+              <input type="number" min="1" max="20" value={item.sets}
+                onChange={e => onUpdate(item.id, "sets", Number(e.target.value))}
+                className="input py-1.5 text-sm" />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="label">Reps</span>
+              <input type="text" value={item.reps} placeholder="12 ou 8-12"
+                onChange={e => onUpdate(item.id, "reps", e.target.value)}
+                className="input py-1.5 text-sm" />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="label">Carga (kg)</span>
+              <input type="number" min="0" step="2.5" value={item.load}
+                onChange={e => onUpdate(item.id, "load", e.target.value)}
+                className="input py-1.5 text-sm" />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="label">Descanso</span>
+              <select value={item.rest} onChange={e => onUpdate(item.id, "rest", Number(e.target.value))} className="input py-1.5 text-sm">
+                {[30,45,60,90,120,180].map(s => <option key={s} value={s}>{s}s</option>)}
+              </select>
+            </label>
+            <div className="col-span-2 sm:col-span-4">
+              <label className="flex flex-col gap-1">
+                <span className="label">Observações</span>
+                <textarea rows={2} value={item.notes} placeholder="Ex: foco na fase excêntrica..."
+                  onChange={e => onUpdate(item.id, "notes", e.target.value)}
+                  className="text-sm resize-none input" />
+              </label>
+            </div>
+          </div>
+        )
       )}
     </div>
   );
@@ -265,6 +301,7 @@ export default function WorkoutBuilderPage() {
   const [saving, setSaving]         = useState(false);
   const [loading, setLoading]       = useState(!!id);
   const [videoExercise, setVideo]   = useState(null);
+  const [newExModal, setNewExModal] = useState(false);
   // null | { mode: "new", targetId } | { mode: "extend", supersetId }
   const [supersetTarget, setSupersetTarget] = useState(null);
 
@@ -331,7 +368,11 @@ export default function WorkoutBuilderPage() {
         toast("Exercício já adicionado neste dia.", { icon: "ℹ️" });
         return d;
       }
-      return { ...d, exercises: [...d.exercises, { id: uid(), exercise, sets: 4, reps: "10-12", load: "", rest: 60, notes: "" }] };
+      const isCardio = exercise.muscleGroup === "Cardio";
+      const defaults = isCardio
+        ? { id: uid(), exercise, duration: 30, intensity: "", rest: 60, notes: "" }
+        : { id: uid(), exercise, sets: 4, reps: "10-12", load: "", rest: 60, notes: "" };
+      return { ...d, exercises: [...d.exercises, defaults] };
     }));
   }, [activeDay, supersetTarget]);
 
@@ -512,7 +553,16 @@ export default function WorkoutBuilderPage() {
         {/* Right: exercise library */}
         <aside className="flex flex-col overflow-hidden bg-white border border-gray-200 rounded-2xl" style={{ maxHeight: "72vh" }}>
           <div className="flex-shrink-0 p-4 border-b border-gray-100">
-            <p className="mb-3 text-sm font-semibold text-gray-900">Biblioteca</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-gray-900">Biblioteca</p>
+              <button onClick={() => setNewExModal(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-brand-600 bg-brand-50 hover:bg-brand-100 transition-colors">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Novo exercício
+              </button>
+            </div>
             <div className="relative">
               <svg className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
@@ -610,6 +660,8 @@ export default function WorkoutBuilderPage() {
           </div>
         </aside>
       </div>
+
+      <ExerciseFormModal open={newExModal} onClose={() => setNewExModal(false)} />
 
       <VideoModal open={!!videoExercise} onClose={() => setVideo(null)}
         title={videoExercise?.name} videoUrl={videoExercise?.videoUrl} />

@@ -11,7 +11,7 @@ const NAV = [
     label: "Início",
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-        stroke={active ? "#FF5722" : "currentColor"} strokeWidth="1.8" strokeLinecap="round">
+        stroke={active ? "#3E564F" : "currentColor"} strokeWidth="1.8" strokeLinecap="round">
         <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
         <polyline points="9 22 9 12 15 12 15 22"/>
       </svg>
@@ -22,7 +22,7 @@ const NAV = [
     label: "Treino",
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-        stroke={active ? "#FF5722" : "currentColor"} strokeWidth="1.8" strokeLinecap="round">
+        stroke={active ? "#3E564F" : "currentColor"} strokeWidth="1.8" strokeLinecap="round">
         <path d="M6 4v16M18 4v16M6 12h12M3 8h3M18 8h3M3 16h3M18 16h3"/>
       </svg>
     ),
@@ -32,7 +32,7 @@ const NAV = [
     label: "Evolução",
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-        stroke={active ? "#FF5722" : "currentColor"} strokeWidth="1.8" strokeLinecap="round">
+        stroke={active ? "#3E564F" : "currentColor"} strokeWidth="1.8" strokeLinecap="round">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
       </svg>
     ),
@@ -42,7 +42,7 @@ const NAV = [
     label: "Medalhas",
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-        stroke={active ? "#FF5722" : "currentColor"} strokeWidth="1.8" strokeLinecap="round">
+        stroke={active ? "#3E564F" : "currentColor"} strokeWidth="1.8" strokeLinecap="round">
         <circle cx="12" cy="8" r="6"/>
         <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
       </svg>
@@ -53,7 +53,7 @@ const NAV = [
     label: "Perfil",
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-        stroke={active ? "#FF5722" : "currentColor"} strokeWidth="1.8" strokeLinecap="round">
+        stroke={active ? "#3E564F" : "currentColor"} strokeWidth="1.8" strokeLinecap="round">
         <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
         <circle cx="12" cy="7" r="4"/>
       </svg>
@@ -72,7 +72,7 @@ export default function StudentLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
+    <div className="min-h-screen flex flex-col max-w-md mx-auto">
       {/* Page content */}
       <main className="flex-1 overflow-y-auto pb-20">
         <Outlet />

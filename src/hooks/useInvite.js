@@ -16,7 +16,7 @@ export function useInvite() {
 
   // ── Criar convite ──────────────────────────────────────────
   // Cria (ou reutiliza) um token para um aluno específico.
-  const createInvite = useCallback(async ({ studentId, studentName, trainerId, trainerName }) => {
+  const createInvite = useCallback(async ({ studentId, studentName, studentEmail, trainerId, trainerName }) => {
     // Verifica se já existe convite pendente para este aluno
     const existing = await getDocs(
       query(
@@ -35,6 +35,7 @@ export function useInvite() {
       token,
       studentId,
       studentName,
+      studentEmail: studentEmail ?? null,
       trainerId,
       trainerName,
       status:    "pending",   // pending | accepted | expired

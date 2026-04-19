@@ -33,7 +33,6 @@ export function useWorkouts() {
     const ref = await addDoc(collection(db, "workoutPlans"), {
       ...data,
       trainerId: user.uid,
-      days:      [],
       status:    "active",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

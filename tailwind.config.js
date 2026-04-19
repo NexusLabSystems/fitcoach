@@ -6,25 +6,25 @@ export default {
     extend: {
       colors: {
         brand: {
-          50:  "#FFF3EE",
-          100: "#FFE0D0",
-          200: "#FFB899",
-          300: "#FF8A5C",
-          400: "#FF6633",
-          500: "#FF5722", // Energy Orange — primary
-          600: "#E64A19", // Deep Burn
-          700: "#BF360C",
-          800: "#8C2000",
-          900: "#5C1200",
+          50:  "#F0F4F2",
+          100: "#D6E4DC",
+          200: "#B8CEC6",
+          300: "#8EA588", // Sage Green
+          400: "#6A8A82",
+          500: "#3E564F", // Medium Dark — primary
+          600: "#324540",
+          700: "#263530",
+          800: "#1E2A25",
+          900: "#183729", // Deep Dark Green
         },
         surface: {
-          DEFAULT: "#1A1A2E", // Night Black
-          muted:   "#16213E", // Surface Dark
-          card:    "#0F3460",
+          DEFAULT: "#183729",
+          muted:   "#263530",
+          card:    "#3E564F",
         },
         accent: {
-          teal:   "#00D4AA", // Recovery
-          gold:   "#FFD600", // PR / Gamificação
+          sage:  "#8EA588", // Sage Green
+          light: "#EBEBEB", // Light Gray
         },
       },
       fontFamily: {
@@ -36,7 +36,7 @@ export default {
         "3xl": "1.5rem",
       },
       boxShadow: {
-        brand: "0 4px 20px -2px rgba(255,87,34,0.25)",
+        brand: "0 4px 20px -2px rgba(62,86,79,0.25)",
         card:  "0 1px 4px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.06)",
       },
       animation: {

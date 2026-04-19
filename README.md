@@ -1,16 +1,28 @@
-# React + Vite
+MELHORIAS PAYMENTS PAGE
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+UX / Funcionalidade
+Confirmação antes de marcar como pago — atualmente um clique já confirma a ação sem aviso. Um diálogo de confirmação evita erros acidentais.
 
-Currently, two official plugins are available:
+Valor total pendente nos cards de stats — hoje só mostra a quantidade de pendentes/atrasados. Mostrar o valor em R$ seria mais útil para o personal entender o impacto financeiro real.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Ordenação configurável — permitir ordenar por vencimento, valor ou status. Hoje está fixo por data de criação.
 
-## React Compiler
+Busca por aluno — ao ter muitos alunos, filtrar por nome facilita encontrar cobranças específicas rapidamente.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Indicador visual de vencimento próximo — destacar cobranças que vencem nos próximos 3–7 dias (ex: badge amarelo "Vence hoje") para ação proativa.
 
-## Expanding the ESLint configuration
+Produto / Negócio
+Cobrança recorrente — opção de criar cobranças mensais automáticas (ex: mensalidade todo dia 5), poupando trabalho repetitivo.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Exportar para CSV/PDF — relatório financeiro mensal para controle ou envio ao contador.
+
+Histórico de pagamentos por aluno — ao clicar no aluno, ver o histórico completo de cobranças dele.
+
+Envio de lembrete por WhatsApp/email — botão para notificar o aluno sobre cobrança pendente ou atrasada.
+
+Visual / Interface
+Valor visível no mobile — o campo de valor tem hidden sm:block, ou seja, some em telas pequenas. Deveria aparecer sempre, talvez em uma linha abaixo do nome.
+
+Paginação ou scroll infinito — sem paginação, a lista pode crescer indefinidamente e travar a tela.
+
+Resumo do mês — uma aba ou seletor de mês/período para filtrar cobranças, em vez de ver todas de uma vez.

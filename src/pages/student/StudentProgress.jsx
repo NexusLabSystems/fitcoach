@@ -191,7 +191,7 @@ function LoadEvolution({ logs, nameMap }) {
               className="w-full px-4 py-2.5 flex items-center gap-2 bg-gray-50 hover:bg-gray-100 transition-colors">
               <span className="text-[11px] font-bold text-brand-500 uppercase tracking-wide">{group}</span>
               <span className="text-[10px] text-gray-400">· {exEntries.length} {exEntries.length === 1 ? "exercício" : "exercícios"}</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="2.5" strokeLinecap="round"
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3E564F" strokeWidth="2.5" strokeLinecap="round"
                 className={clsx("ml-auto flex-shrink-0 transition-transform", isCollapsed && "-rotate-90")}>
                 <path d="M6 9l6 6 6-6"/>
               </svg>
@@ -337,7 +337,7 @@ export default function StudentProgress() {
   })();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="bg-white px-5 pt-12 pb-5 border-b border-gray-100">
         <h1 className="text-xl font-semibold text-gray-900">Minha evolução</h1>
       </div>
@@ -439,7 +439,7 @@ export default function StudentProgress() {
                                 <button onClick={() => setExpandedLog(isOpen ? null : log.id)}
                                   className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors">
                                   <div className="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="2" strokeLinecap="round">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3E564F" strokeWidth="2" strokeLinecap="round">
                                       <path d="M6 4v16M18 4v16M6 12h12M3 8h3M18 8h3M3 16h3M18 16h3"/>
                                     </svg>
                                   </div>

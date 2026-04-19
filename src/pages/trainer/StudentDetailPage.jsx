@@ -97,10 +97,11 @@ export default function StudentDetailPage() {
     setInviteLoading(true);
     try {
       const token = await createInvite({
-        studentId:   student.id,
-        studentName: student.name,
-        trainerId:   trainerProfile.uid,
-        trainerName: trainerProfile.name,
+        studentId:    student.id,
+        studentName:  student.name,
+        studentEmail: student.email ?? null,
+        trainerId:    trainerProfile.uid,
+        trainerName:  trainerProfile.name,
       });
       const link = `${window.location.origin}/invite/${token}`;
       await navigator.clipboard.writeText(link);

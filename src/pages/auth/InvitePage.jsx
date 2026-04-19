@@ -26,8 +26,12 @@ export default function InvitePage() {
       if (inv.status === "expired")   { setStatus("expired");  return; }
       if (inv.status === "accepted")  { setStatus("accepted"); return; }
       setInvite(inv);
-      // Pré-preenche o nome do aluno se o trainer tiver cadastrado
-      setForm(prev => ({ ...prev, name: inv.studentName ?? "" }));
+      // Pré-preenche o nome e email do aluno se o trainer tiver cadastrado
+      setForm(prev => ({
+        ...prev,
+        name:  inv.studentName  ?? "",
+        email: inv.studentEmail ?? "",
+      }));
       setStatus("valid");
     });
   }, [token]);
