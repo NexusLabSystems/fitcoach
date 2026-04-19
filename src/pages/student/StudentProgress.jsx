@@ -1,6 +1,6 @@
 // src/pages/student/StudentProgress.jsx
 import { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, getDocs } from "firebase/firestore";
 import { db }                   from "@/lib/firebase";
 import { useAuth }              from "@/contexts/AuthContext";
 import { useStudentWorkout }    from "@/hooks/useStudentWorkout";
@@ -254,11 +254,99 @@ function LoadEvolution({ logs, nameMap }) {
   );
 }
 
+// ── Composição corporal ──────────────────────────────────────────
+function BodyCompositionSection({ assessments }) {
+  const latest = assessments[assessments.length - 1];
+  const first  = assessments[0];
+
+  function delta(curr, prev, positiveIsGood) {
+    if (curr == null || prev == null || curr === prev) return null;
+    const diff = curr - prev;
+    const good = positiveIsGood ? diff > 0 : diff < 0;
+    return (
+      <span className={clsx("text-xs font-medium", good ? "text-green-500" : "text-red-400")}>
+        {diff > 0 ? "↑" : "↓"} {Math.abs(diff).toFixed(1)}
+      </span>
+    );
+  }
+
+  const fatMass  = latest.weight && latest.fatPct != null
+    ? +(latest.weight * latest.fatPct / 100).toFixed(1) : null;
+  const bmi      = latest.weight && latest.height
+    ? +(latest.weight / Math.pow(latest.height / 100, 2)).toFixed(1) : null;
+
+  const metrics = [
+    { label: "% Gordura",   value: latest.fatPct   != null ? `${latest.fatPct}%`    : null, raw: latest.fatPct,   prev: first.fatPct,   pos: false, accent: true },
+    { label: "Peso",        value: latest.weight   != null ? `${latest.weight} kg`  : null, raw: latest.weight,   prev: first.weight,   pos: false },
+    { label: "Massa magra", value: latest.leanMass != null ? `${latest.leanMass} kg`: null, raw: latest.leanMass, prev: first.leanMass, pos: true  },
+    { label: "IMC",         value: bmi             != null ? `${bmi}`               : null, raw: bmi,             prev: first.weight && first.height ? +(first.weight / Math.pow(first.height / 100, 2)).toFixed(1) : null, pos: false },
+  ].filter(m => m.value != null);
+
+  if (metrics.length === 0) return null;
+
+  return (
+    <div className="card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-semibold text-gray-900">Composição corporal</p>
+        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+          <span>{formatDate(latest.date ?? latest.createdAt)}</span>
+          {assessments.length > 1 && (
+            <span className="px-1.5 py-0.5 rounded-md bg-brand-50 text-brand-600 font-medium">
+              {assessments.length} avaliações
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {metrics.map(m => (
+          <div key={m.label} className={clsx("rounded-xl p-3 border",
+            m.accent ? "bg-brand-50 border-brand-100" : "bg-gray-50 border-gray-100")}>
+            <p className="text-xs text-gray-400 mb-1">{m.label}</p>
+            <p className={clsx("text-lg font-bold", m.accent ? "text-brand-600" : "text-gray-900")}>
+              {m.value}
+            </p>
+            {assessments.length > 1 && (
+              <div className="mt-0.5 text-[11px] text-gray-400">
+                {delta(m.raw, m.prev, m.pos) ?? <span className="text-gray-300">sem variação</span>}
+                {m.prev != null && (
+                  <span className="ml-1 text-gray-300">
+                    (era {m.label === "% Gordura" ? `${m.prev}%` : `${m.prev}${m.label === "IMC" ? "" : " kg"}`})
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Barra gordura vs magra */}
+      {latest.fatPct != null && latest.leanMass != null && latest.weight != null && (
+        <div className="mt-3">
+          <div className="flex overflow-hidden h-2.5 rounded-full">
+            <div className="bg-red-400 rounded-l-full" style={{ width: `${latest.fatPct}%` }} />
+            <div className="bg-brand-400 rounded-r-full" style={{ width: `${(100 - latest.fatPct).toFixed(1)}%` }} />
+          </div>
+          <div className="flex justify-between mt-1">
+            <span className="flex items-center gap-1 text-[10px] text-gray-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />Gorda {fatMass} kg
+            </span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-400">
+              Magra {latest.leanMass} kg<span className="w-1.5 h-1.5 rounded-full bg-brand-400" />
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StudentProgress() {
   const { profile }           = useAuth();
   const { plan }              = useStudentWorkout();
-  const [logs, setLogs]       = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs]           = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [assessments, setAssessments] = useState([]);
   const [expandedLog, setExpandedLog]     = useState(null);
   const [collapsedWeeks, setCollapsedWeeks] = useState(new Set());
 
@@ -298,6 +386,20 @@ export default function StudentProgress() {
   });
 
   useEffect(() => {
+    if (!profile?.studentId) return;
+    getDocs(query(collection(db, "assessments"), where("studentId", "==", profile.studentId)))
+      .then(snap => {
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        data.sort((a, b) =>
+          (a.date?.seconds ?? a.createdAt?.seconds ?? 0) -
+          (b.date?.seconds ?? b.createdAt?.seconds ?? 0)
+        );
+        setAssessments(data);
+      })
+      .catch(() => {});
+  }, [profile?.studentId]);
+
+  useEffect(() => {
     if (!profile?.uid) return;
     const q = query(
       collection(db, "workoutLogs"),
@@ -309,7 +411,7 @@ export default function StudentProgress() {
       setLogs(data);
       setLoading(false);
     });
-    return unsub;
+    return () => { try { unsub(); } catch {} };
   }, [profile]);
 
   const thisMonth = logs.filter(l => {
@@ -362,6 +464,9 @@ export default function StudentProgress() {
             </p>
           </div>
         </div>
+
+        {/* Composição corporal */}
+        {assessments.length > 0 && <BodyCompositionSection assessments={assessments} />}
 
         {/* Calendário mensal */}
         {!loading && <MonthCalendar logs={logs} />}

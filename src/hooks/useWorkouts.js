@@ -25,7 +25,7 @@ export function useWorkouts() {
       setPlans(data);
       setLoading(false);
     });
-    return unsub;
+    return () => { try { unsub(); } catch {} };
   }, [user]);
 
   // ── Criar plano ────────────────────────────────────────────

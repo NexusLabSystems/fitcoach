@@ -26,7 +26,7 @@ export function useNotifications() {
       setNotifs(data);
       setLoading(false);
     });
-    return unsub;
+    return () => { try { unsub(); } catch {} };
   }, [user]);
 
   // ── Verifica pagamentos vencidos e cria notificações ───────

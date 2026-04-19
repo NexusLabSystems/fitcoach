@@ -23,6 +23,31 @@ const TABS = [
   { id: "payments",    label: "Financeiro" },
 ];
 
+// ── Helpers de composição corporal ───────────────────────────
+function calcBMI(w, h) { return w && h ? w / Math.pow(h / 100, 2) : null; }
+function classifyBMI(v) {
+  if (v == null) return null;
+  if (v < 18.5) return "Abaixo do peso";
+  if (v < 25)   return "Adequado";
+  if (v < 30)   return "Sobrepeso";
+  if (v < 35)   return "Obesidade I";
+  if (v < 40)   return "Obesidade II";
+  return "Obesidade III";
+}
+function calcWHR(waist, hip) { return waist && hip ? waist / hip : null; }
+function classifyFat(pct, gender) {
+  if (pct == null) return null;
+  const t = gender === "M" ? [6, 14, 18, 25] : [14, 21, 25, 32];
+  const i = t.findIndex(v => pct < v);
+  return ["Essencial", "Atlético", "Fitness", "Médio", "Obesidade"][i === -1 ? 4 : i];
+}
+function calcSumFoldsSD(folds) {
+  if (!folds) return null;
+  const sum = ["chest","axillary","tricep","subscapular","abdominal","suprailiac","thigh"]
+    .reduce((a, k) => a + (parseFloat(folds[k]) || 0), 0);
+  return sum > 0 ? sum : null;
+}
+
 function InfoRow({ label, value }) {
   return (
     <div className="flex items-start justify-between py-2.5 border-b border-gray-50 last:border-0">
@@ -46,8 +71,10 @@ export default function StudentDetailPage() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [workouts, setWorkouts]         = useState([]);
   const [workoutsLoading, setWorkoutsLoading] = useState(false);
-  const [payments, setPayments]         = useState([]);
+  const [payments, setPayments]               = useState([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [assessments, setAssessments]         = useState([]);
+  const [assessmentsLoading, setAssessmentsLoading] = useState(false);
 
   useEffect(() => { fetchStudent(); }, [id]);
 
@@ -62,6 +89,27 @@ export default function StudentDetailPage() {
       .then(snap => setWorkouts(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
       .catch(err => console.error("Erro ao buscar treinos:", err))
       .finally(() => setWorkoutsLoading(false));
+  }, [tab, id, user]);
+
+  useEffect(() => {
+    if (tab !== "assessments" || !id || !user) return;
+    setAssessmentsLoading(true);
+    getDocs(query(
+      collection(db, "assessments"),
+      where("trainerId", "==", user.uid),
+    ))
+      .then(snap => {
+        const data = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(a => a.studentId === id);
+        data.sort((a, b) =>
+          (a.date?.seconds ?? a.createdAt?.seconds ?? 0) -
+          (b.date?.seconds ?? b.createdAt?.seconds ?? 0)
+        );
+        setAssessments(data);
+      })
+      .catch(err => console.error("Erro ao buscar avaliações:", err))
+      .finally(() => setAssessmentsLoading(false));
   }, [tab, id, user]);
 
   useEffect(() => {
@@ -345,9 +393,108 @@ export default function StudentDetailPage() {
       )}
 
       {tab === "assessments" && (
-        <div className="p-6 card animate-fade-in">
-          <h3 className="mb-4 text-sm font-semibold text-gray-900">Fotos de evolução</h3>
-          <EvolutionPhotos studentId={student.id} />
+        <div className="flex flex-col gap-6 animate-fade-in">
+
+          {/* Tabela comparativa */}
+          {assessmentsLoading ? (
+            <div className="p-6 card animate-pulse">
+              <div className="w-48 h-4 mb-4 bg-gray-100 rounded" />
+              <div className="space-y-2">
+                {[...Array(6)].map((_, i) => <div key={i} className="h-9 bg-gray-100 rounded" />)}
+              </div>
+            </div>
+          ) : assessments.length === 0 ? (
+            <div className="card">
+              <EmptyState
+                icon={<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>}
+                title="Nenhuma avaliação registrada"
+                description="Acesse a página de Avaliações para registrar a primeira avaliação deste aluno."
+                action={<button onClick={() => navigate("/trainer/assessments")} className="btn-primary text-sm">Ver avaliações</button>}
+              />
+            </div>
+          ) : (() => {
+            const fmt = ts => {
+              if (!ts) return "—";
+              const d = ts.toDate ? ts.toDate() : new Date(ts);
+              return format(d, "dd/MM/yyyy", { locale: ptBR });
+            };
+            const delta = (curr, prev, positiveIsGood) => {
+              if (curr == null || prev == null) return null;
+              const diff = curr - prev;
+              if (Math.abs(diff) < 0.01) return null;
+              const good = positiveIsGood ? diff > 0 : diff < 0;
+              return (
+                <span className={clsx("ml-1 text-xs", good ? "text-green-500" : "text-red-500")}>
+                  {diff > 0 ? "↑" : "↓"} {Math.abs(diff).toFixed(1)}
+                </span>
+              );
+            };
+            const rows = [
+              { label: "Peso (kg)",          get: a => a.weight,                                           fmt: v => v,                   pos: false },
+              { label: "Altura (cm)",         get: a => a.height,                                           fmt: v => v,                   pos: null  },
+              { label: "IMC (kg/m²)",         get: a => { const b = calcBMI(a.weight, a.height); return b ? +b.toFixed(1) : null; }, fmt: v => v, pos: false, sub: a => classifyBMI(calcBMI(a.weight, a.height)) },
+              { label: "% Gordura",           get: a => a.fatPct,                                           fmt: v => `${v}%`,             pos: false, sub: a => classifyFat(a.fatPct, a.gender) },
+              { label: "Massa gorda (kg)",    get: a => a.weight && a.fatPct != null ? +(a.weight * a.fatPct / 100).toFixed(1) : null, fmt: v => v, pos: false },
+              { label: "Massa magra (kg)",    get: a => a.leanMass,                                         fmt: v => v,                   pos: true  },
+              { label: "RCQ",                 get: a => { const w = calcWHR(a.circumferences?.waist, a.circumferences?.hip); return w ? +w.toFixed(2) : null; }, fmt: v => v, pos: false },
+              { label: "Somatório dobras",    get: a => { const s = calcSumFoldsSD(a.folds); return s ? +s.toFixed(1) : null; }, fmt: v => `${v} mm`, pos: false },
+            ];
+            return (
+              <div className="overflow-hidden card">
+                <div className="px-5 pt-5 pb-3">
+                  <h3 className="text-sm font-semibold text-gray-900">Evolução da composição corporal</h3>
+                  <p className="mt-0.5 text-xs text-gray-400">{assessments.length} avaliação{assessments.length !== 1 ? "ões" : ""} registrada{assessments.length !== 1 ? "s" : ""}</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="px-5 py-3 text-xs font-medium tracking-wide text-left text-gray-400 uppercase whitespace-nowrap">Parâmetro</th>
+                        {assessments.map(a => (
+                          <th key={a.id} className="px-4 py-3 text-xs font-medium text-center text-gray-600 whitespace-nowrap">
+                            {fmt(a.date ?? a.createdAt)}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map(row => {
+                        const vals = assessments.map(a => row.get(a));
+                        if (vals.every(v => v == null)) return null;
+                        return (
+                          <tr key={row.label} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                            <td className="px-5 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">{row.label}</td>
+                            {assessments.map((a, i) => {
+                              const val = row.get(a);
+                              const prev = i > 0 ? row.get(assessments[i - 1]) : null;
+                              const sub = row.sub ? row.sub(a) : null;
+                              return (
+                                <td key={a.id} className="px-4 py-3 text-center">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {val != null ? row.fmt(val) : "—"}
+                                    {row.pos != null && delta(val, prev, row.pos)}
+                                  </div>
+                                  {sub && val != null && (
+                                    <div className="text-xs text-gray-400">{sub}</div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Fotos de evolução */}
+          <div className="p-6 card">
+            <h3 className="mb-4 text-sm font-semibold text-gray-900">Fotos de evolução</h3>
+            <EvolutionPhotos studentId={student.id} />
+          </div>
         </div>
       )}
 

@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
       }
       setLoading(false);
     });
-    return unsub;
+    return () => { try { unsub(); } catch {} };
   }, []);
 
   async function refreshProfile(uid, email) {

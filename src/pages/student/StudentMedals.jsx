@@ -79,7 +79,7 @@ export default function StudentMedals() {
       setLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     });
-    return unsub;
+    return () => { try { unsub(); } catch {} };
   }, [profile]);
 
   // ── Cálculos ──────────────────────────────────────────────────────

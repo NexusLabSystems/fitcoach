@@ -94,7 +94,7 @@ export default function EvolutionPhotos({ studentId }) {
       setPhotos(data);
       setLoading(false);
     });
-    return unsub;
+    return () => { try { unsub(); } catch {} };
   }, [studentId]);
 
   async function handleFiles(e) {

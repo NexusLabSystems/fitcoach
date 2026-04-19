@@ -43,7 +43,7 @@ export function useStudents() {
       }
     );
 
-    return unsub;
+    return () => { try { unsub(); } catch {} };
   }, [user]);
 
   // ── Criar aluno ────────────────────────────────────────────

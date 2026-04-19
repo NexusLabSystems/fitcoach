@@ -51,7 +51,7 @@ export default function StudentDashboard() {
       setLogs(data);
       setLogsLoading(false);
     });
-    return unsub;
+    return () => { try { unsub(); } catch {} };
   }, [profile]);
 
   // ── Cálculos ──────────────────────────────────────────────────────

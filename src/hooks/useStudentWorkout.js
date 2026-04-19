@@ -32,7 +32,7 @@ export function useStudentWorkout() {
       setLoading(false);
     });
 
-    return unsub;
+    return () => { try { unsub(); } catch {} };
   }, [profile?.studentId, profile?.uid]);
 
   return { plan, loading };
