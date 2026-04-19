@@ -33,7 +33,7 @@ export default function InvitePage() {
         email: inv.studentEmail ?? "",
       }));
       setStatus("valid");
-    });
+    }).catch(() => setStatus("invalid"));
   }, [token]);
 
   // Se já está logado como aluno, aceita o convite direto

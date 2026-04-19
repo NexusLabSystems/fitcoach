@@ -135,10 +135,10 @@ service cloud.firestore {
 
     // ── invites ────────────────────────────────────────────────
     // Trainer cria convites
-    // Qualquer autenticado lê (para validar o token na página de convite)
+    // Leitura pública — o token de 24 chars é a chave de acesso
     // Aluno atualiza para aceitar
     match /invites/{inviteId} {
-      allow read:   if isAuth();
+      allow read:   if true;
       allow create: if isTrainer();
       allow update: if isAuth()
                     && resource.data.status == 'pending'

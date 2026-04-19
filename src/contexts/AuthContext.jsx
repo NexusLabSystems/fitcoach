@@ -80,25 +80,31 @@ export function AuthProvider({ children }) {
   }
 
   // ── Registrar aluno ────────────────────────────────────────
-  // Chamado quando o aluno cria sua própria conta.
-  // Busca automaticamente o doc em `students` pelo email.
+  // Cria o users doc primeiro (necessário para as regras Firestore),
+  // depois busca o doc em `students` pelo email e atualiza o studentId.
   async function registerStudent({ name, email, password }) {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-    // Verifica se o trainer já cadastrou este aluno
-    const studentSnap = await getDocs(
-      query(collection(db, "students"), where("email", "==", email))
-    );
-    const studentId = studentSnap.empty ? null : studentSnap.docs[0].id;
-
+    // 1. Cria o users doc imediatamente (sem studentId por enquanto)
     await setDoc(doc(db, "users", cred.user.uid), {
       uid:       cred.user.uid,
       name,
       email,
       role:      "student",
-      studentId: studentId,
+      studentId: null,
       createdAt: serverTimestamp(),
     });
+
+    // 2. Agora que o users doc existe, busca o doc de students pelo email
+    const studentSnap = await getDocs(
+      query(collection(db, "students"), where("email", "==", email))
+    );
+    if (!studentSnap.empty) {
+      await updateDoc(doc(db, "users", cred.user.uid), {
+        studentId: studentSnap.docs[0].id,
+      });
+    }
+
     await refreshProfile(cred.user.uid, email);
     return cred;
   }
