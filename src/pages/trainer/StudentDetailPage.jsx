@@ -154,7 +154,8 @@ export default function StudentDetailPage() {
       const link = `${window.location.origin}/invite/${token}`;
       await navigator.clipboard.writeText(link);
       toast.success("Link de convite copiado!");
-    } catch {
+    } catch (err) {
+      console.error("Erro ao gerar convite:", err);
       toast.error("Erro ao gerar convite.");
     } finally {
       setInviteLoading(false);

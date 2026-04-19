@@ -19,15 +19,12 @@ export function useInvite() {
   const createInvite = useCallback(async ({ studentId, studentName, studentEmail, trainerId, trainerName }) => {
     // Verifica se já existe convite pendente para este aluno
     const existing = await getDocs(
-      query(
-        collection(db, "invites"),
-        where("studentId", "==", studentId),
-        where("status",    "==", "pending")
-      )
+      query(collection(db, "invites"), where("studentId", "==", studentId))
     );
 
     if (!existing.empty) {
-      return existing.docs[0].data().token;
+      const pending = existing.docs.find(d => d.data().status === "pending");
+      if (pending) return pending.data().token;
     }
 
     const token = generateToken();
