@@ -6,8 +6,37 @@ import { db, auth }      from "@/lib/firebase";
 import { useAuth }       from "@/contexts/AuthContext";
 import AvatarUpload      from "@/components/ui/AvatarUpload";
 import Modal             from "@/components/ui/Modal";
+import TutorialTour      from "@/components/ui/TutorialTour";
 import toast             from "react-hot-toast";
 import clsx              from "clsx";
+
+const TOUR_KEY = "fitcoach_tour_trainer_settings";
+const TOUR_STEPS = [
+  {
+    target: null,
+    icon: "⚙️",
+    title: "Configurações da conta",
+    description: "Aqui você gerencia tudo relacionado à sua conta: foto de perfil, dados pessoais, segurança e plano de assinatura.",
+  },
+  {
+    target: "settings-profile",
+    icon: "👤",
+    title: "Perfil público",
+    description: "Atualize sua foto, nome, telefone e bio. Essas informações são visíveis para seus alunos e ajudam a construir sua presença na plataforma.",
+  },
+  {
+    target: "settings-security",
+    icon: "🔒",
+    title: "Segurança",
+    description: "Altere seu email de login ou defina uma nova senha. Por segurança, será solicitada a confirmação da senha atual antes de qualquer alteração.",
+  },
+  {
+    target: "settings-plan",
+    icon: "🚀",
+    title: "Plano de assinatura",
+    description: "Veja seu plano atual e compare com os planos Pro e Premium. Upgrades com mais alunos, relatórios avançados e recursos exclusivos estão chegando em breve.",
+  },
+];
 
 // ── Planos ─────────────────────────────────────────────────────
 const PLANS = [
@@ -190,6 +219,7 @@ export default function SettingsPage() {
     setPendingAction(null);
   }
 
+  const [showTour, setShowTour] = useState(() => !localStorage.getItem(TOUR_KEY));
   const currentPlan = profile?.plan ?? "free";
 
   return (
@@ -200,6 +230,7 @@ export default function SettingsPage() {
       </div>
 
       {/* ── Foto e perfil ────────────────────────────────── */}
+      <div data-tutorial="settings-profile">
       <Section title="Perfil" description="Suas informações públicas visíveis para os alunos.">
         <div className="flex items-center gap-5 mb-6">
           <AvatarUpload
@@ -252,8 +283,10 @@ export default function SettingsPage() {
           </div>
         </form>
       </Section>
+      </div>
 
       {/* ── Segurança ─────────────────────────────────────── */}
+      <div data-tutorial="settings-security">
       <Section title="Segurança" description="Altere seu email ou senha de acesso.">
         <div className="flex flex-col gap-5">
           {/* Email */}
@@ -300,8 +333,10 @@ export default function SettingsPage() {
           </div>
         </div>
       </Section>
+      </div>
 
       {/* ── Plano de assinatura ───────────────────────────── */}
+      <div data-tutorial="settings-plan">
       <Section title="Plano de assinatura" description="Seu plano atual e opções disponíveis.">
         <div className="flex flex-col gap-3">
           {PLANS.map(plan => (
@@ -355,6 +390,7 @@ export default function SettingsPage() {
           ))}
         </div>
       </Section>
+      </div>
 
       {/* ── Zona de perigo ────────────────────────────────── */}
       <Section title="Zona de perigo">
@@ -379,6 +415,14 @@ export default function SettingsPage() {
         onClose={() => { setReauthOpen(false); setPendingAction(null); }}
         onSuccess={handleReauthSuccess}
       />
+
+      {showTour && (
+        <TutorialTour
+          steps={TOUR_STEPS}
+          storageKey={TOUR_KEY}
+          onDone={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 }

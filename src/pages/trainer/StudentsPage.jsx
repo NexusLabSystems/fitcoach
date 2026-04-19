@@ -5,9 +5,38 @@ import { useStudents }       from "@/hooks/useStudents";
 import StudentFormModal      from "@/components/students/StudentFormModal";
 import Avatar                from "@/components/ui/Avatar";
 import EmptyState            from "@/components/ui/EmptyState";
+import TutorialTour          from "@/components/ui/TutorialTour";
 import toast                 from "react-hot-toast";
 import { format }            from "date-fns";
 import { ptBR }              from "date-fns/locale";
+
+const TOUR_KEY   = "fitcoach_tour_trainer_students";
+const TOUR_STEPS = [
+  {
+    target: null,
+    icon: "👥",
+    title: "Gerenciamento de alunos",
+    description: "Aqui você cadastra, organiza e acompanha todos os seus alunos. Vamos conhecer cada recurso desta página.",
+  },
+  {
+    target: "new-student-btn",
+    icon: "➕",
+    title: "Cadastrar novo aluno",
+    description: "Clique aqui para adicionar um novo aluno. Você preenche nome, e-mail, telefone, objetivo e data de nascimento. Após o cadastro, você poderá enviar um convite para o aluno acessar a plataforma.",
+  },
+  {
+    target: "students-filters",
+    icon: "🔍",
+    title: "Busca e filtros",
+    description: "Encontre alunos rapidamente pelo nome ou e-mail. Use os botões Todos / Ativos / Inativos para filtrar a lista conforme o status de cada aluno.",
+  },
+  {
+    target: "students-table",
+    icon: "📋",
+    title: "Lista de alunos",
+    description: "Cada linha mostra o aluno com objetivo, data de cadastro e status. Clique em qualquer linha para abrir o perfil completo. Use o botão ⋮ no final da linha para editar os dados ou arquivar o aluno.",
+  },
+];
 
 const STATUS_OPTIONS = [
   { value: "all",      label: "Todos" },
@@ -32,7 +61,8 @@ export default function StudentsPage() {
   const [statusFilter, setStatus]   = useState("all");
   const [modalOpen, setModalOpen]   = useState(false);
   const [editStudent, setEditStudent] = useState(null);
-  const [menuOpen, setMenuOpen]     = useState(null); // student id com menu aberto
+  const [menuOpen, setMenuOpen]     = useState(null);
+  const [showTour, setShowTour]     = useState(() => !localStorage.getItem(TOUR_KEY));
 
   // ── Filtragem ──────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -81,7 +111,7 @@ export default function StudentsPage() {
             {stats.total} cadastrados · {stats.active} ativos
           </p>
         </div>
-        <button onClick={openCreate} className="btn-primary">
+        <button data-tutorial="new-student-btn" onClick={openCreate} className="btn-primary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14"/>
           </svg>
@@ -90,7 +120,7 @@ export default function StudentsPage() {
       </div>
 
       {/* ── Filters ─────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div data-tutorial="students-filters" className="flex flex-col sm:flex-row gap-3 mb-6">
         {/* Search */}
         <div className="relative flex-1">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -124,7 +154,7 @@ export default function StudentsPage() {
 
       {/* ── Table / List ────────────────────────────────────── */}
       {loading ? (
-        <div className="card overflow-hidden">
+        <div data-tutorial="students-table" className="card overflow-hidden">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-gray-50 last:border-0 animate-pulse">
               <div className="w-9 h-9 rounded-full bg-gray-100 flex-shrink-0" />
@@ -137,7 +167,7 @@ export default function StudentsPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="card">
+        <div data-tutorial="students-table" className="card">
           <EmptyState
             icon={
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -161,7 +191,7 @@ export default function StudentsPage() {
           />
         </div>
       ) : (
-        <div className="card overflow-hidden">
+        <div data-tutorial="students-table" className="card overflow-hidden">
           {/* Table header — desktop only */}
           <div className="hidden sm:grid grid-cols-[1fr_180px_120px_80px_44px] gap-4 px-6 py-3 border-b border-gray-100 bg-gray-50">
             <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Aluno</span>
@@ -276,6 +306,14 @@ export default function StudentsPage() {
         onClose={() => setModalOpen(false)}
         student={editStudent}
       />
+
+      {showTour && (
+        <TutorialTour
+          steps={TOUR_STEPS}
+          storageKey={TOUR_KEY}
+          onDone={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 }

@@ -37,7 +37,7 @@ function formatDate(ts) {
 export default function StudentDashboard() {
   const navigate          = useNavigate();
   const { profile }       = useAuth();
-  const { plan, loading } = useStudentWorkout();
+  const { plan, loading, isExpired, daysUntilExpiry } = useStudentWorkout();
 
   const [logs, setLogs]             = useState([]);
   const [logsLoading, setLogsLoading] = useState(true);
@@ -212,6 +212,36 @@ export default function StudentDashboard() {
           <p className="text-sm text-white font-medium">{motivation}</p>
         </div>
       </div>
+
+      {/* Banner de plano expirado / expirando */}
+      {isExpired && (
+        <div className="mx-5 mt-4 flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl">
+          <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-red-700">Plano encerrado</p>
+            <p className="text-xs text-red-500 mt-0.5">Seu plano de treino expirou. Entre em contato com seu personal para renovar e liberar o acesso completo.</p>
+          </div>
+        </div>
+      )}
+      {!isExpired && daysUntilExpiry !== null && daysUntilExpiry <= 3 && (
+        <div className="mx-5 mt-4 flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+          <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Plano expirando em breve</p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              Seu plano {daysUntilExpiry === 1 ? "encerra amanhã" : `encerra em ${daysUntilExpiry} dias`}. Fale com seu personal para renovar.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-4 p-5 -mt-2">
 

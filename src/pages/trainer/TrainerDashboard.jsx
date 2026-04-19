@@ -1,6 +1,7 @@
 // src/pages/trainer/TrainerDashboard.jsx
 import { useEffect, useState } from "react";
 import { useNavigate }         from "react-router-dom";
+import TutorialTour            from "@/components/ui/TutorialTour";
 import {
   collection, query, where, getDocs,
 } from "firebase/firestore";
@@ -141,6 +142,46 @@ function QuickAction({ label, description, icon, accent, onClick }) {
   );
 }
 
+const TOUR_KEY   = "fitcoach_tour_trainer_dashboard";
+const TOUR_STEPS = [
+  {
+    target: null,
+    icon: "👋",
+    title: "Bem-vindo ao FitCoach!",
+    description: "Vamos fazer um tour rápido para te mostrar como a plataforma funciona. Você pode pular a qualquer momento e retomar pelas configurações.",
+  },
+  {
+    target: "kpi-cards",
+    icon: "📊",
+    title: "Visão geral dos seus números",
+    description: "Esses cards mostram em tempo real: total de alunos, quantos estão ativos, planos de treino criados e pagamentos pendentes. Clique em qualquer card para ir direto à seção.",
+  },
+  {
+    target: "students-list",
+    icon: "👥",
+    title: "Lista de alunos",
+    description: "Acompanhe todos os seus alunos: último treino realizado, frequência na semana e plano ativo. Use os filtros para ver apenas ativos ou inativos.",
+  },
+  {
+    target: "quick-actions",
+    icon: "⚡",
+    title: "Ações rápidas",
+    description: "Atalhos para as tarefas mais comuns: cadastrar novo aluno, montar um treino, registrar avaliação física ou lançar uma cobrança.",
+  },
+  {
+    target: "sidebar-nav",
+    icon: "🧭",
+    title: "Menu de navegação",
+    description: "Use o menu lateral para acessar todas as seções: Alunos, Treinos, Avaliações, Exercícios, Financeiro e Configurações. No celular ele fica oculto — abra pelo ícone no topo.",
+  },
+  {
+    target: "notif-bell",
+    icon: "🔔",
+    title: "Central de notificações",
+    description: "Receba alertas de pagamentos em atraso e planos de treino próximos do vencimento. O sino fica vermelho quando há itens que precisam da sua atenção.",
+  },
+];
+
 // ── Main ──────────────────────────────────────────────────────────
 export default function TrainerDashboard() {
   const { user, profile } = useAuth();
@@ -150,6 +191,12 @@ export default function TrainerDashboard() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [filter, setFilter]     = useState("all"); // "all" | "active" | "inactive"
+  const [showTour, setShowTour] = useState(false);
+
+  // Inicia tour na primeira visita
+  useEffect(() => {
+    if (!localStorage.getItem(TOUR_KEY)) setShowTour(true);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -310,7 +357,7 @@ export default function TrainerDashboard() {
 
       {/* ── KPI Cards ──────────────────────────────────────────── */}
       {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div data-tutorial="kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="card p-5 space-y-4">
               <Skeleton className="h-3 w-2/3" />
@@ -319,7 +366,7 @@ export default function TrainerDashboard() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div data-tutorial="kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard label="Total de alunos" value={stats.students} sub={`${stats.active} ativos`}
             accent={{ bg: "bg-brand-50", icon: "text-brand-500", text: "text-gray-900" }}
             onClick={() => navigate("/trainer/students")}
@@ -348,7 +395,7 @@ export default function TrainerDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
         {/* Lista de alunos — 3 cols */}
-        <div className="lg:col-span-3 card p-6">
+        <div data-tutorial="students-list" className="lg:col-span-3 card p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-bold text-gray-900">Alunos</h2>
@@ -417,7 +464,7 @@ export default function TrainerDashboard() {
         </div>
 
         {/* Ações rápidas — 2 cols */}
-        <div className="lg:col-span-2 card p-6">
+        <div data-tutorial="quick-actions" className="lg:col-span-2 card p-6">
           <div className="mb-4">
             <h2 className="text-sm font-bold text-gray-900">Ações rápidas</h2>
             <p className="text-xs text-gray-400">Atalhos do sistema</p>
@@ -442,6 +489,14 @@ export default function TrainerDashboard() {
           </div>
         </div>
       </div>
+
+      {showTour && (
+        <TutorialTour
+          steps={TOUR_STEPS}
+          storageKey={TOUR_KEY}
+          onDone={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 }

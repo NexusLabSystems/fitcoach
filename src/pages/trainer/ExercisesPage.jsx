@@ -4,8 +4,37 @@ import { useExercises, MUSCLE_GROUPS } from "@/hooks/useExercises";
 import ExerciseFormModal from "@/components/exercises/ExerciseFormModal";
 import VideoModal, { youtubeThumbnail } from "@/components/ui/VideoModal";
 import EmptyState        from "@/components/ui/EmptyState";
+import TutorialTour      from "@/components/ui/TutorialTour";
 import toast             from "react-hot-toast";
 import clsx              from "clsx";
+
+const TOUR_KEY   = "fitcoach_tour_trainer_exercises";
+const TOUR_STEPS = [
+  {
+    target: null,
+    icon: "💪",
+    title: "Biblioteca de exercícios",
+    description: "Aqui ficam todos os exercícios disponíveis para montar treinos. A biblioteca inclui exercícios padrão da plataforma e os que você criar.",
+  },
+  {
+    target: "new-exercise-btn",
+    icon: "➕",
+    title: "Criar exercício personalizado",
+    description: "Cadastre exercícios exclusivos com nome, grupo muscular, nível de dificuldade, equipamento, descrição e link de vídeo do YouTube. Eles ficam disponíveis só para você ao montar treinos.",
+  },
+  {
+    target: "exercises-filters",
+    icon: "🔍",
+    title: "Busca e filtro por grupo muscular",
+    description: "Busque pelo nome do exercício ou filtre por grupo muscular (Peito, Costas, Pernas, etc.). Os filtros se combinam para uma busca precisa.",
+  },
+  {
+    target: "exercises-grid",
+    icon: "🃏",
+    title: "Cards de exercícios",
+    description: "Cada card mostra a miniatura do vídeo (clique para assistir), nome, grupo muscular, dificuldade e equipamento. Exercícios criados por você têm o botão ⋮ para editar ou excluir.",
+  },
+];
 
 const DIFF_STYLE = {
   básico:        "badge-green",
@@ -127,6 +156,7 @@ export default function ExercisesPage() {
   const [modalOpen, setModalOpen]   = useState(false);
   const [editExercise, setEdit]     = useState(null);
   const [videoExercise, setVideo]   = useState(null);
+  const [showTour, setShowTour]     = useState(() => !localStorage.getItem(TOUR_KEY));
 
   const filtered = useMemo(() => {
     return exercises.filter(ex => {
@@ -156,7 +186,7 @@ export default function ExercisesPage() {
           <h1 className="text-2xl font-semibold text-gray-900">Biblioteca de exercícios</h1>
           <p className="text-sm text-gray-400 mt-0.5">{exercises.length} exercício{exercises.length !== 1 ? "s" : ""}</p>
         </div>
-        <button onClick={openCreate} className="btn-primary">
+        <button data-tutorial="new-exercise-btn" onClick={openCreate} className="btn-primary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14"/>
           </svg>
@@ -165,7 +195,7 @@ export default function ExercisesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 mb-6 sm:flex-row">
+      <div data-tutorial="exercises-filters" className="flex flex-col gap-3 mb-6 sm:flex-row">
         <div className="relative flex-1">
           <svg className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
@@ -190,7 +220,7 @@ export default function ExercisesPage() {
 
       {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div data-tutorial="exercises-grid" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="overflow-hidden card animate-pulse">
               <div className="bg-gray-100 aspect-video" />
@@ -202,7 +232,7 @@ export default function ExercisesPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="card">
+        <div data-tutorial="exercises-grid" className="card">
           <EmptyState
             icon={
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -215,7 +245,7 @@ export default function ExercisesPage() {
           />
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div data-tutorial="exercises-grid" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map(ex => (
             <ExerciseCard
               key={ex.id}
@@ -241,6 +271,14 @@ export default function ExercisesPage() {
         title={videoExercise?.name}
         videoUrl={videoExercise?.videoUrl}
       />
+
+      {showTour && (
+        <TutorialTour
+          steps={TOUR_STEPS}
+          storageKey={TOUR_KEY}
+          onDone={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 }

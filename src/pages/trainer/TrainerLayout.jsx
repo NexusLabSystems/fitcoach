@@ -116,7 +116,7 @@ export default function TrainerLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-col flex-1 gap-1 p-3 overflow-y-auto">
+        <nav data-tutorial="sidebar-nav" className="flex flex-col flex-1 gap-1 p-3 overflow-y-auto">
           {NAV_ITEMS.map(item => (
             <SideNavLink key={item.to} item={item} collapsed={collapsed} />
           ))}
@@ -195,7 +195,7 @@ export default function TrainerLayout() {
           {/* Right side */}
           <div className="flex items-center gap-2 ml-auto">
             <GlobalSearch />
-            <NotificationBell />
+            <span data-tutorial="notif-bell"><NotificationBell /></span>
           </div>
         </header>
 

@@ -91,6 +91,66 @@ export function useNotifications() {
     return overdue.length;
   }, [user]);
 
+  // ── Verifica planos próximos do vencimento / vencidos ─────
+  const checkExpiringPlans = useCallback(async () => {
+    if (!user) return;
+
+    const snap = await getDocs(
+      query(collection(db, "workoutPlans"),
+        where("trainerId", "==", user.uid),
+        where("status", "==", "active"),
+      )
+    );
+
+    const now = new Date();
+    const warningMs = 3 * 86400000; // 3 dias
+
+    for (const planDoc of snap.docs) {
+      const plan = { id: planDoc.id, ...planDoc.data() };
+      if (!plan.validUntil) continue;
+
+      const until = plan.validUntil.toDate ? plan.validUntil.toDate() : new Date(plan.validUntil);
+      const diffMs = until - now;
+      const expired = diffMs < 0;
+      const expiringSoon = !expired && diffMs <= warningMs;
+
+      if (!expired && !expiringSoon) continue;
+
+      const type = expired ? "plan_expired" : "plan_expiring";
+
+      // Evita duplicata (uma notif por tipo por plano)
+      const existSnap = await getDocs(
+        query(collection(db, "notifications"),
+          where("trainerId", "==", user.uid),
+          where("planId", "==", plan.id),
+          where("type", "==", type),
+        )
+      );
+      if (!existSnap.empty) continue;
+
+      const daysLeft = expired ? 0 : Math.ceil(diffMs / 86400000);
+      const studentSnap = plan.studentId
+        ? await getDocs(query(collection(db, "students"), where("__name__", "==", plan.studentId)))
+        : null;
+      const studentName = studentSnap?.docs?.[0]?.data()?.name ?? "Aluno";
+
+      await addDoc(collection(db, "notifications"), {
+        trainerId:   user.uid,
+        planId:      plan.id,
+        planName:    plan.name,
+        studentId:   plan.studentId ?? null,
+        studentName,
+        type,
+        title:       expired ? "Plano de treino encerrado" : "Plano de treino expirando",
+        message:     expired
+          ? `O plano "${plan.name}" de ${studentName} foi encerrado.`
+          : `O plano "${plan.name}" de ${studentName} ${daysLeft === 1 ? "encerra amanhã" : `encerra em ${daysLeft} dias`}.`,
+        read:        false,
+        createdAt:   serverTimestamp(),
+      });
+    }
+  }, [user]);
+
   // ── Marcar como lida ───────────────────────────────────────
   const markRead = useCallback(async (id) => {
     await updateDoc(doc(db, "notifications", id), { read: true });
@@ -106,6 +166,6 @@ export function useNotifications() {
 
   return {
     notifications, loading, unreadCount,
-    checkOverduePayments, markRead, markAllRead,
+    checkOverduePayments, checkExpiringPlans, markRead, markAllRead,
   };
 }

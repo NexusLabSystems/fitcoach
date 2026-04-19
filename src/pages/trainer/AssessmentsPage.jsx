@@ -1,5 +1,6 @@
 // src/pages/trainer/AssessmentsPage.jsx
 import { useState, useEffect, useMemo } from "react";
+import TutorialTour from "@/components/ui/TutorialTour";
 import {
   collection, query, where, onSnapshot,
   addDoc, deleteDoc, doc, serverTimestamp,
@@ -622,6 +623,34 @@ function NewAssessmentModal({ open, onClose, students, trainerId }) {
   );
 }
 
+const TOUR_KEY   = "fitcoach_tour_trainer_assessments";
+const TOUR_STEPS = [
+  {
+    target: null,
+    icon: "📏",
+    title: "Avaliações físicas",
+    description: "Aqui você registra e acompanha as avaliações físicas de cada aluno. O sistema calcula automaticamente composição corporal, IMC, RCQ e muito mais.",
+  },
+  {
+    target: "new-assessment-btn",
+    icon: "➕",
+    title: "Registrar nova avaliação",
+    description: "Clique para abrir o formulário de avaliação. Escolha entre três protocolos: Pollock 7 (dobras cutâneas com cálculo automático de % gordura), Bioimpedância (insere o resultado direto) ou Manual (valores livres). Você também registra circunferências e observações.",
+  },
+  {
+    target: "assessment-filter",
+    icon: "📊",
+    title: "Filtro por aluno + gráfico de evolução",
+    description: "Filtre as avaliações por aluno clicando no nome dele. Ao selecionar um aluno, um gráfico de evolução aparece acima da tabela mostrando a variação de % gordura, peso ou massa magra ao longo do tempo.",
+  },
+  {
+    target: "assessment-table",
+    icon: "🔍",
+    title: "Histórico de avaliações",
+    description: "Cada linha mostra o aluno, protocolo, peso, % gordura, massa magra e data. Clique em qualquer linha para abrir o relatório completo com barra de composição corporal, índices calculados, tabela de dobras e circunferências.",
+  },
+];
+
 // ── Main page ──────────────────────────────────────────────────
 export default function AssessmentsPage() {
   const { user }     = useAuth();
@@ -631,6 +660,7 @@ export default function AssessmentsPage() {
   const [modalOpen, setModalOpen]               = useState(false);
   const [selectedStudent, setSelectedStudent]   = useState("all");
   const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [showTour, setShowTour]                 = useState(() => !localStorage.getItem(TOUR_KEY));
 
   useEffect(() => {
     if (!user) return;
@@ -684,7 +714,7 @@ export default function AssessmentsPage() {
             {assessments.length} avaliação{assessments.length !== 1 ? "ões" : ""} registrada{assessments.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <button onClick={() => setModalOpen(true)} className="btn-primary">
+        <button data-tutorial="new-assessment-btn" onClick={() => setModalOpen(true)} className="btn-primary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14"/>
           </svg>
@@ -694,7 +724,7 @@ export default function AssessmentsPage() {
 
       {/* Student filter */}
       {studentsWithAssessments.length > 0 && (
-        <div className="flex gap-2 pb-1 mb-6 overflow-x-auto">
+        <div data-tutorial="assessment-filter" className="flex gap-2 pb-1 mb-6 overflow-x-auto">
           <button onClick={() => setSelectedStudent("all")}
             className={clsx("flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all",
               selectedStudent === "all" ? "bg-brand-500 text-white shadow-brand" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -731,7 +761,7 @@ export default function AssessmentsPage() {
 
       {/* Assessments table */}
       {loading ? (
-        <div className="overflow-hidden card">
+        <div data-tutorial="assessment-table" className="overflow-hidden card">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-gray-50 last:border-0 animate-pulse">
               <div className="bg-gray-100 rounded-full w-9 h-9" />
@@ -740,7 +770,7 @@ export default function AssessmentsPage() {
           ))}
         </div>
       ) : filteredAssessments.length === 0 ? (
-        <div className="card">
+        <div data-tutorial="assessment-table" className="card">
           <EmptyState
             icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>}
             title="Nenhuma avaliação registrada"
@@ -749,7 +779,7 @@ export default function AssessmentsPage() {
           />
         </div>
       ) : (
-        <div className="overflow-hidden card">
+        <div data-tutorial="assessment-table" className="overflow-hidden card">
           <div className="hidden sm:grid grid-cols-[1fr_120px_100px_100px_100px_100px_40px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100">
             {["Aluno","Protocolo","Peso","% Gordura","Massa magra","Data",""].map((h, i) => (
               <span key={i} className="text-xs font-medium tracking-wide text-gray-400 uppercase">{h}</span>
@@ -796,6 +826,14 @@ export default function AssessmentsPage() {
         student={selectedAssessment ? studentMap[selectedAssessment.studentId] : null}
         onClose={() => setSelectedAssessment(null)}
       />
+
+      {showTour && (
+        <TutorialTour
+          steps={TOUR_STEPS}
+          storageKey={TOUR_KEY}
+          onDone={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 }

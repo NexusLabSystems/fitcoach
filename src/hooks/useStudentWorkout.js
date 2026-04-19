@@ -35,5 +35,14 @@ export function useStudentWorkout() {
     return () => { try { unsub(); } catch {} };
   }, [profile?.studentId, profile?.uid]);
 
-  return { plan, loading };
+  let isExpired = false;
+  let daysUntilExpiry = null;
+  if (plan?.validUntil) {
+    const until = plan.validUntil.toDate ? plan.validUntil.toDate() : new Date(plan.validUntil);
+    const diffMs = until - new Date();
+    isExpired = diffMs < 0;
+    daysUntilExpiry = isExpired ? 0 : Math.ceil(diffMs / 86400000);
+  }
+
+  return { plan, loading, isExpired, daysUntilExpiry };
 }

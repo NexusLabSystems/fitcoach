@@ -1,6 +1,7 @@
 // src/pages/trainer/WorkoutBuilderPage.jsx
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate, useParams }  from "react-router-dom";
+import TutorialTour from "@/components/ui/TutorialTour";
 import { useExercises, MUSCLE_GROUPS } from "@/hooks/useExercises";
 import { useWorkouts }             from "@/hooks/useWorkouts";
 import { useStudents }             from "@/hooks/useStudents";
@@ -20,6 +21,40 @@ import {
   mergeIntoSuperset, addToSuperset,
   removeFromSuperset, updateSupersetSubItem, updateSupersetContainer,
 } from "@/lib/supersetUtils";
+
+const TOUR_KEY   = "fitcoach_tour_workout_builder";
+const TOUR_STEPS = [
+  {
+    target: null,
+    icon: "🏗️",
+    title: "Editor de plano de treino",
+    description: "Aqui você monta o plano completo: nome, aluno, vigência, dias de treino e os exercícios de cada dia. Vamos conhecer cada parte.",
+  },
+  {
+    target: "builder-topbar",
+    icon: "✏️",
+    title: "Configurações do plano",
+    description: "Dê um nome ao plano (clique no título para editar), vincule a um aluno, defina a vigência (mensal, trimestral, etc.) e clique em Salvar quando estiver pronto.",
+  },
+  {
+    target: "builder-days",
+    icon: "📅",
+    title: "Dias de treino",
+    description: "Cada aba é um dia de treino (Dia A, Dia B...). Clique duas vezes em uma aba para renomeá-la. Use \"+ Novo dia\" para adicionar mais dias ao plano.",
+  },
+  {
+    target: "builder-exercises",
+    icon: "📝",
+    title: "Exercícios do dia",
+    description: "Os exercícios adicionados aparecem aqui. Expanda cada um para ajustar séries, repetições, carga e descanso. Arraste para reordenar. Para criar bi-set ou tri-set, clique no ícone de corrente entre dois exercícios.",
+  },
+  {
+    target: "builder-library",
+    icon: "📚",
+    title: "Biblioteca de exercícios",
+    description: "Busque e filtre por grupo muscular. Clique em um exercício para adicioná-lo ao dia atual. Use \"+ Novo exercício\" para cadastrar um exercício personalizado com vídeo.",
+  },
+];
 
 const DIFF_STYLE = {
   básico:        "badge-green",
@@ -290,8 +325,11 @@ export default function WorkoutBuilderPage() {
   const { students }          = useStudents();
   const { exercises: libraryExercises, loading: exLoading } = useExercises();
 
-  const [planName, setPlanName]     = useState("Novo Plano de Treino");
-  const [studentId, setStudentId]   = useState("");
+  const [showTour, setShowTour]         = useState(() => !localStorage.getItem(TOUR_KEY));
+  const [planName, setPlanName]         = useState("Novo Plano de Treino");
+  const [studentId, setStudentId]       = useState("");
+  const [validityType, setValidityType] = useState("none");
+  const [validUntil, setValidUntil]     = useState(null);
   const [days, setDays]             = useState([
     { id: uid(), label: "Dia A", exercises: [] },
   ]);
@@ -315,6 +353,11 @@ export default function WorkoutBuilderPage() {
       setPlanName(plan.name);
       setStudentId(plan.studentId ?? "");
       setDays(plan.days?.length > 0 ? plan.days : [{ id: uid(), label: "Dia A", exercises: [] }]);
+      setValidityType(plan.validityType ?? "none");
+      if (plan.validUntil) {
+        const d = plan.validUntil.toDate ? plan.validUntil.toDate() : new Date(plan.validUntil);
+        setValidUntil(d);
+      }
       setLoading(false);
     }).catch(() => { toast.error("Plano não encontrado."); navigate("/trainer/workouts"); });
   }, [id]);
@@ -417,12 +460,34 @@ export default function WorkoutBuilderPage() {
     }));
   }, [activeDay]);
 
+  const VALIDITY_DAYS = { mensal: 30, trimestral: 90, semestral: 180, anual: 365 };
+
+  function handleValidityTypeChange(type) {
+    setValidityType(type);
+    if (type === "none") {
+      setValidUntil(null);
+    } else if (type !== "personalizado") {
+      setValidUntil(new Date(Date.now() + VALIDITY_DAYS[type] * 86400000));
+    } else {
+      setValidUntil(null);
+    }
+  }
+
   // ── Save ───────────────────────────────────────────────────
   async function handleSave() {
     if (!planName.trim()) { toast.error("Dê um nome ao plano."); return; }
+    if (validityType === "personalizado" && !validUntil) {
+      toast.error("Escolha a data de encerramento."); return;
+    }
     setSaving(true);
     try {
-      const payload = { name: planName.trim(), studentId: studentId || null, days };
+      const payload = {
+        name: planName.trim(),
+        studentId: studentId || null,
+        days,
+        validityType: validityType === "none" ? null : validityType,
+        validUntil:   validityType === "none" ? null : validUntil,
+      };
       if (id) {
         await updatePlan(id, payload);
         toast.success("Plano atualizado!");
@@ -447,7 +512,7 @@ export default function WorkoutBuilderPage() {
   return (
     <div className="max-w-6xl mx-auto animate-fade-in">
       {/* ── Top bar ─────────────────────────────────────────── */}
-      <div className="flex flex-col items-start gap-4 mb-6 sm:flex-row sm:items-center">
+      <div data-tutorial="builder-topbar" className="flex flex-col items-start gap-4 mb-6 sm:flex-row sm:items-center">
         <button onClick={() => navigate("/trainer/workouts")} className="text-sm text-gray-400 hover:text-gray-700 flex items-center gap-1.5 transition-colors">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M19 12H5M12 5l-7 7 7 7"/>
@@ -459,13 +524,46 @@ export default function WorkoutBuilderPage() {
             className="flex-1 min-w-0 p-0 text-xl font-semibold text-gray-900 bg-transparent border-none outline-none focus:ring-0"
             placeholder="Nome do plano..." />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <select value={studentId} onChange={e => setStudentId(e.target.value)} className="input py-1.5 text-sm w-44">
             <option value="">Sem aluno vinculado</option>
             {students.filter(s => s.status === "active").map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
+          {/* Vigência */}
+          <div className="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-400 flex-shrink-0">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <select value={validityType} onChange={e => handleValidityTypeChange(e.target.value)} className="input py-1.5 text-sm w-48">
+              <option value="none">Sem vigência</option>
+              <option value="mensal">Mensal (30 dias)</option>
+              <option value="trimestral">Trimestral (90 dias)</option>
+              <option value="semestral">Semestral (180 dias)</option>
+              <option value="anual">Anual (365 dias)</option>
+              <option value="personalizado">Personalizado</option>
+            </select>
+            {validityType === "personalizado" && (
+              <input
+                type="date"
+                min={new Date().toISOString().split("T")[0]}
+                value={validUntil ? validUntil.toISOString().split("T")[0] : ""}
+                onChange={e => setValidUntil(e.target.value ? new Date(e.target.value + "T12:00:00") : null)}
+                className="input py-1.5 text-sm"
+              />
+            )}
+            {validityType !== "none" && validityType !== "personalizado" && validUntil && (
+              <span className="text-xs text-gray-400 whitespace-nowrap">
+                até {validUntil.toLocaleDateString("pt-BR")}
+              </span>
+            )}
+            {validityType === "personalizado" && validUntil && (
+              <span className="text-xs text-gray-400 whitespace-nowrap">
+                até {validUntil.toLocaleDateString("pt-BR")}
+              </span>
+            )}
+          </div>
           <button onClick={handleSave} disabled={saving} className="btn-primary">
             {saving ? (
               <><span className="w-4 h-4 border-2 border-white rounded-full border-t-transparent animate-spin" />Salvando...</>
@@ -480,7 +578,7 @@ export default function WorkoutBuilderPage() {
       </div>
 
       {/* ── Day tabs ────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 pb-1 mb-6 overflow-x-auto">
+      <div data-tutorial="builder-days" className="flex items-center gap-2 pb-1 mb-6 overflow-x-auto">
         {days.map(day => (
           <DayTab key={day.id} day={day} isActive={activeDay === day.id}
             onClick={() => setActiveDay(day.id)}
@@ -499,7 +597,7 @@ export default function WorkoutBuilderPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
 
         {/* Left: exercise list */}
-        <section>
+        <section data-tutorial="builder-exercises">
           <p className="mb-4 text-sm text-gray-500">
             {!currentDay || countExercises(currentDay.exercises) === 0
               ? "Nenhum exercício — adicione da biblioteca →"
@@ -551,7 +649,7 @@ export default function WorkoutBuilderPage() {
         </section>
 
         {/* Right: exercise library */}
-        <aside className="flex flex-col overflow-hidden bg-white border border-gray-200 rounded-2xl" style={{ maxHeight: "72vh" }}>
+        <aside data-tutorial="builder-library" className="flex flex-col overflow-hidden bg-white border border-gray-200 rounded-2xl" style={{ maxHeight: "72vh" }}>
           <div className="flex-shrink-0 p-4 border-b border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-gray-900">Biblioteca</p>
@@ -665,6 +763,14 @@ export default function WorkoutBuilderPage() {
 
       <VideoModal open={!!videoExercise} onClose={() => setVideo(null)}
         title={videoExercise?.name} videoUrl={videoExercise?.videoUrl} />
+
+      {showTour && (
+        <TutorialTour
+          steps={TOUR_STEPS}
+          storageKey={TOUR_KEY}
+          onDone={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 // src/pages/trainer/StudentDetailPage.jsx
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import TutorialTour from "@/components/ui/TutorialTour";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useStudents }    from "@/hooks/useStudents";
@@ -21,6 +22,34 @@ const TABS = [
   { id: "workouts",    label: "Treinos" },
   { id: "assessments", label: "Avaliações" },
   { id: "payments",    label: "Financeiro" },
+];
+
+const TOUR_KEY   = "fitcoach_tour_student_detail";
+const TOUR_STEPS = [
+  {
+    target: null,
+    icon: "🧑‍💼",
+    title: "Perfil completo do aluno",
+    description: "Esta página centraliza tudo sobre um aluno: dados pessoais, treinos, avaliações físicas e histórico financeiro. Vamos conhecer cada seção.",
+  },
+  {
+    target: "student-header",
+    icon: "📌",
+    title: "Cabeçalho do aluno",
+    description: "Aqui ficam o nome, e-mail, telefone e o status (Ativo / Inativo). Clique no avatar para fazer upload de uma foto. As etiquetas abaixo mostram idade, gênero, objetivo e data de cadastro.",
+  },
+  {
+    target: "student-actions",
+    icon: "🔗",
+    title: "Ações do perfil",
+    description: "\"Convidar\" gera um link exclusivo e copia automaticamente — envie pelo WhatsApp ou e-mail para o aluno criar a conta e acessar os treinos. \"Editar\" atualiza os dados. \"Arquivar\" desativa o aluno sem apagar o histórico.",
+  },
+  {
+    target: "student-tabs",
+    icon: "📑",
+    title: "Abas do perfil",
+    description: "• Visão geral — informações pessoais e notas do treinador.\n• Treinos — planos atribuídos ao aluno, clique para abrir o editor.\n• Avaliações — tabela comparativa de composição corporal e fotos de evolução.\n• Financeiro — cobranças lançadas com status e vencimento.",
+  },
 ];
 
 // ── Helpers de composição corporal ───────────────────────────
@@ -67,6 +96,7 @@ export default function StudentDetailPage() {
   const [student, setStudent]       = useState(null);
   const [loading, setLoading]       = useState(true);
   const [tab, setTab]               = useState("overview");
+  const [showTour, setShowTour]     = useState(() => !localStorage.getItem(TOUR_KEY));
   const [editOpen, setEditOpen]     = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [workouts, setWorkouts]         = useState([]);
@@ -225,7 +255,7 @@ export default function StudentDetailPage() {
       </button>
 
       {/* Profile header */}
-      <div className="p-6 mb-6 card">
+      <div data-tutorial="student-header" className="p-6 mb-6 card">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-4">
             <AvatarUpload
@@ -250,7 +280,7 @@ export default function StudentDetailPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div data-tutorial="student-actions" className="flex items-center gap-2">
             <button
               onClick={handleGenerateInvite}
               disabled={inviteLoading}
@@ -303,7 +333,7 @@ export default function StudentDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 mb-6 bg-gray-100 rounded-xl w-fit">
+      <div data-tutorial="student-tabs" className="flex gap-1 p-1 mb-6 bg-gray-100 rounded-xl w-fit">
         {TABS.map(t => (
           <button
             key={t.id}
@@ -557,6 +587,14 @@ export default function StudentDetailPage() {
         onClose={() => { setEditOpen(false); fetchStudent(); }}
         student={student}
       />
+
+      {showTour && (
+        <TutorialTour
+          steps={TOUR_STEPS}
+          storageKey={TOUR_KEY}
+          onDone={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 }

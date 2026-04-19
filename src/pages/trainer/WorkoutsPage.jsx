@@ -5,9 +5,38 @@ import { useWorkouts }       from "@/hooks/useWorkouts";
 import { useStudents }       from "@/hooks/useStudents";
 import EmptyState            from "@/components/ui/EmptyState";
 import Modal                 from "@/components/ui/Modal";
+import TutorialTour          from "@/components/ui/TutorialTour";
 import toast                 from "react-hot-toast";
 import { format }            from "date-fns";
 import { ptBR }              from "date-fns/locale";
+
+const TOUR_KEY   = "fitcoach_tour_trainer_workouts";
+const TOUR_STEPS = [
+  {
+    target: null,
+    icon: "🏋️",
+    title: "Gerenciamento de treinos",
+    description: "Aqui ficam todos os planos de treino que você criou. Cada plano pode ser atribuído a um aluno e ter múltiplos dias com exercícios diferentes.",
+  },
+  {
+    target: "new-workout-btn",
+    icon: "➕",
+    title: "Criar novo plano",
+    description: "Clique aqui para abrir o editor de treinos. Você vai nomear o plano, escolher o aluno, definir a vigência e montar os dias com exercícios.",
+  },
+  {
+    target: "workouts-search",
+    icon: "🔍",
+    title: "Busca de planos",
+    description: "Encontre planos rapidamente pelo nome ou pelo nome do aluno vinculado.",
+  },
+  {
+    target: "workouts-grid",
+    icon: "📋",
+    title: "Cards de planos",
+    description: "Cada card mostra o nome do plano, aluno vinculado, quantidade de dias e exercícios, status (Ativo/Inativo) e data de criação. Clique no card para editar. Use o botão ⋮ para duplicar ou excluir.",
+  },
+];
 
 const STATUS_STYLE = {
   active:   "badge-green",
@@ -158,6 +187,7 @@ export default function WorkoutsPage() {
   const { students }                   = useStudents();
   const [search, setSearch]            = useState("");
   const [duplicating, setDuplicating]  = useState(null);
+  const [showTour, setShowTour]        = useState(() => !localStorage.getItem(TOUR_KEY));
 
   const studentMap = useMemo(() => {
     return Object.fromEntries(students.map(s => [s.id, s.name]));
@@ -187,6 +217,7 @@ export default function WorkoutsPage() {
           <p className="text-sm text-gray-400 mt-0.5">{plans.length} plano{plans.length !== 1 ? "s" : ""} criado{plans.length !== 1 ? "s" : ""}</p>
         </div>
         <button
+          data-tutorial="new-workout-btn"
           onClick={() => navigate("/trainer/workouts/new")}
           className="btn-primary"
         >
@@ -198,7 +229,7 @@ export default function WorkoutsPage() {
       </div>
 
       {/* Search */}
-      <div className="relative mb-6">
+      <div data-tutorial="workouts-search" className="relative mb-6">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
         </svg>
@@ -212,7 +243,7 @@ export default function WorkoutsPage() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div data-tutorial="workouts-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="card p-5 animate-pulse">
               <div className="h-4 bg-gray-100 rounded w-2/3 mb-3" />
@@ -222,7 +253,7 @@ export default function WorkoutsPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="card">
+        <div data-tutorial="workouts-grid" className="card">
           <EmptyState
             icon={
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -239,7 +270,7 @@ export default function WorkoutsPage() {
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div data-tutorial="workouts-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(plan => (
             <PlanCard
               key={plan.id}
@@ -259,6 +290,14 @@ export default function WorkoutsPage() {
         students={students}
         onConfirm={duplicatePlan}
       />
+
+      {showTour && (
+        <TutorialTour
+          steps={TOUR_STEPS}
+          storageKey={TOUR_KEY}
+          onDone={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 }

@@ -28,13 +28,28 @@ const TYPE_ICON = {
       </svg>
     </div>
   ),
+  plan_expiring: (
+    <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+    </div>
+  ),
+  plan_expired: (
+    <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round">
+        <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+    </div>
+  ),
 };
 
 export default function NotificationBell() {
   const navigate                          = useNavigate();
   const { notifications, unreadCount,
           markRead, markAllRead,
-          checkOverduePayments }          = useNotifications();
+          checkOverduePayments,
+          checkExpiringPlans }            = useNotifications();
   const { permission, requestPermission,
           notifyOverdue }                 = usePushNotifications();
   const { students }                      = useStudents();
@@ -50,7 +65,7 @@ export default function NotificationBell() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Verifica pagamentos vencidos ao montar (uma vez por sessão)
+  // Verifica pagamentos vencidos + planos expirando ao montar (uma vez por sessão)
   useEffect(() => {
     if (!students.length) return;
     checkOverduePayments(students).then(count => {
@@ -59,6 +74,7 @@ export default function NotificationBell() {
         notifyOverdue(overdue);
       }
     });
+    checkExpiringPlans();
   }, [students]);
 
   async function handleRequestPush() {
@@ -71,6 +87,10 @@ export default function NotificationBell() {
     markRead(notif.id);
     setOpen(false);
     if (notif.type === "overdue_payment") navigate("/trainer/payments");
+    if (notif.type === "plan_expiring" || notif.type === "plan_expired") {
+      if (notif.planId) navigate(`/trainer/workouts/${notif.planId}`);
+      else navigate("/trainer/workouts");
+    }
   }
 
   return (

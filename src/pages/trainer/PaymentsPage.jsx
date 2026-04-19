@@ -10,7 +10,42 @@ import { useStudents } from "@/hooks/useStudents";
 import Modal           from "@/components/ui/Modal";
 import Avatar          from "@/components/ui/Avatar";
 import EmptyState      from "@/components/ui/EmptyState";
+import TutorialTour    from "@/components/ui/TutorialTour";
 import toast           from "react-hot-toast";
+
+const TOUR_KEY = "fitcoach_tour_trainer_payments";
+const TOUR_STEPS = [
+  {
+    target: null,
+    icon: "💰",
+    title: "Controle financeiro",
+    description: "Aqui você gerencia todas as cobranças dos seus alunos: mensalidades, pacotes ou qualquer outro serviço. Acompanhe o que foi pago, o que está pendente e o que está atrasado.",
+  },
+  {
+    target: "new-payment-btn",
+    icon: "➕",
+    title: "Nova cobrança",
+    description: "Crie uma cobrança vinculada a um aluno. Informe o valor, a data de vencimento e uma descrição (ex: Mensalidade, Pacote trimestral).",
+  },
+  {
+    target: "payments-stats",
+    icon: "📊",
+    title: "Resumo financeiro",
+    description: "Os três cards mostram o total recebido no mês, quantas cobranças estão pendentes e quantas estão atrasadas. Use para ter uma visão rápida da saúde financeira.",
+  },
+  {
+    target: "payments-filter",
+    icon: "🔍",
+    title: "Filtro por status",
+    description: "Filtre as cobranças por status: Todas, Pendentes, Atrasadas ou Pagas. Útil para focar nas cobranças que precisam de atenção.",
+  },
+  {
+    target: "payments-list",
+    icon: "📋",
+    title: "Lista de cobranças",
+    description: "Cada linha mostra o aluno, descrição, vencimento, valor e status. Use 'Marcar pago' para confirmar recebimentos, 'Atrasado' para sinalizar atrasos, ou edite/exclua a cobrança pelos ícones à direita.",
+  },
+];
 import { format }      from "date-fns";
 import { ptBR }        from "date-fns/locale";
 import clsx            from "clsx";
@@ -213,6 +248,7 @@ export default function PaymentsPage() {
   const [filter, setFilter]     = useState("all");
   const [modalOpen, setModalOpen]     = useState(false);
   const [editPayment, setEditPayment] = useState(null);
+  const [showTour, setShowTour]       = useState(() => !localStorage.getItem(TOUR_KEY));
 
   useEffect(() => {
     if (!user) return;
@@ -274,7 +310,7 @@ export default function PaymentsPage() {
           <h1 className="text-2xl font-semibold text-gray-900">Financeiro</h1>
           <p className="text-sm text-gray-400 mt-0.5">{payments.length} cobrança{payments.length !== 1 ? "s" : ""} no total</p>
         </div>
-        <button onClick={() => setModalOpen(true)} className="btn-primary">
+        <button data-tutorial="new-payment-btn" onClick={() => setModalOpen(true)} className="btn-primary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14"/>
           </svg>
@@ -283,7 +319,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div data-tutorial="payments-stats" className="grid grid-cols-3 gap-4 mb-8">
         <div className="card p-5">
           <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Recebido</p>
           <p className="text-2xl font-semibold text-green-600">{formatCurrency(stats.total)}</p>
@@ -299,7 +335,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Filter */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-6">
+      <div data-tutorial="payments-filter" className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-6">
         {FILTER_OPTIONS.map(opt => (
           <button key={opt.value} onClick={() => setFilter(opt.value)}
             className={clsx("px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
@@ -311,7 +347,7 @@ export default function PaymentsPage() {
       </div>
 
       {loading ? (
-        <div className="card overflow-hidden">
+        <div data-tutorial="payments-list" className="card overflow-hidden">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-gray-50 last:border-0 animate-pulse">
               <div className="w-9 h-9 rounded-full bg-gray-100" />
@@ -321,7 +357,7 @@ export default function PaymentsPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="card">
+        <div data-tutorial="payments-list" className="card">
           <EmptyState
             icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>}
             title="Nenhuma cobrança encontrada"
@@ -330,7 +366,7 @@ export default function PaymentsPage() {
           />
         </div>
       ) : (
-        <div className="card overflow-hidden">
+        <div data-tutorial="payments-list" className="card overflow-hidden">
           {filtered.map(payment => {
             const student = studentMap[payment.studentId];
             return (
@@ -392,6 +428,14 @@ export default function PaymentsPage() {
         payment={editPayment}
         students={students}
       />
+
+      {showTour && (
+        <TutorialTour
+          steps={TOUR_STEPS}
+          storageKey={TOUR_KEY}
+          onDone={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 }
