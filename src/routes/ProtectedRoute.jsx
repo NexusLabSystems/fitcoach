@@ -28,8 +28,8 @@ export function ProtectedRoute({ role }) {
   // Não autenticado → login
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
 
-  // Perfil carregando (raro mas seguro aguardar)
-  if (!profile) return <FullScreenLoader />;
+  // Usuário autenticado mas sem doc em Firestore → redireciona para login
+  if (!profile) return <Navigate to="/login" replace />;
 
   // Role errada → redireciona para a área correta
   if (role && profile.role !== role) {

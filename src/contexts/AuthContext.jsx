@@ -23,14 +23,21 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        await refreshProfile(firebaseUser.uid, firebaseUser.email);
-      } else {
+      try {
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          await refreshProfile(firebaseUser.uid, firebaseUser.email);
+        } else {
+          setUser(null);
+          setProfile(null);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar perfil:", err);
         setUser(null);
         setProfile(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => { try { unsub(); } catch {} };
   }, []);

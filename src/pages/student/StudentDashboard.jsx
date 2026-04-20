@@ -1,7 +1,7 @@
 // src/pages/student/StudentDashboard.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
 import { db }                from "@/lib/firebase";
 import { useAuth }           from "@/contexts/AuthContext";
 import { useStudentWorkout } from "@/hooks/useStudentWorkout";
@@ -41,6 +41,14 @@ export default function StudentDashboard() {
 
   const [logs, setLogs]             = useState([]);
   const [logsLoading, setLogsLoading] = useState(true);
+  const [trainerName, setTrainerName] = useState(null);
+
+  useEffect(() => {
+    if (!plan?.trainerId) return;
+    getDoc(doc(db, "users", plan.trainerId))
+      .then(snap => { if (snap.exists()) setTrainerName(snap.data().name?.split(" ")[0]); })
+      .catch(() => {});
+  }, [plan?.trainerId]);
 
   useEffect(() => {
     if (!profile?.uid) return;
@@ -201,16 +209,21 @@ export default function StudentDashboard() {
           </div>
           {profile?.photoURL ? (
             <img src={profile.photoURL} alt={firstName}
-              className="w-12 h-12 rounded-full object-cover ring-2 ring-white/40 flex-shrink-0" />
+              className="w-16 h-16 rounded-full object-cover ring-2 ring-white/40 flex-shrink-0" />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 ring-2 ring-white/40">
-              <span className="text-sm font-bold text-white">{initials}</span>
+            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 ring-2 ring-white/40">
+              <span className="text-lg font-bold text-white">{initials}</span>
             </div>
           )}
         </div>
-        <div className="bg-white/15 rounded-xl px-3 py-2 inline-block">
-          <p className="text-sm text-white font-medium">{motivation}</p>
-        </div>
+        {trainerName && (
+          <div className="bg-white/15 rounded-xl px-3 py-2 inline-flex items-center gap-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.7">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <p className="text-xs text-white/80 font-medium">Personal: {trainerName}</p>
+          </div>
+        )}
       </div>
 
       {/* Banner de plano expirado / expirando */}
