@@ -440,11 +440,11 @@ export default function StudentProgress() {
 
   return (
     <div className="min-h-screen">
-      <div className="bg-white px-5 pt-12 pb-5 border-b border-gray-100">
-        <h1 className="text-xl font-semibold text-gray-900">Minha evolução</h1>
+      <div className="bg-gradient-to-br from-brand-500 to-brand-700 shadow-[0_4px_16px_rgba(0,0,0,0.15)] px-5 pt-12 pb-10">
+        <h1 className="text-xl font-semibold text-white">Minha evolução</h1>
       </div>
 
-      <div className="p-5 flex flex-col gap-4">
+      <div className="px-5 pb-5 flex flex-col gap-4" style={{ marginTop: "-1.5rem" }}>
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="card p-4 text-center">
@@ -452,7 +452,7 @@ export default function StudentProgress() {
             <p className="text-xs text-gray-400 mt-0.5">Total de treinos</p>
           </div>
           <div className="card p-4 text-center">
-            <p className="text-2xl font-semibold text-gray-900">{thisMonth}</p>
+            <p className="text-2xl font-semibold text-teal-600">{thisMonth}</p>
             <p className="text-xs text-gray-400 mt-0.5">Este mês</p>
           </div>
           <div className={clsx("card p-4 text-center", streak >= 3 && "bg-gradient-to-b from-orange-50 to-white border-orange-200")}>

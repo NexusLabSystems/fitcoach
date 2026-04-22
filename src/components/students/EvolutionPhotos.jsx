@@ -28,7 +28,7 @@ function Lightbox({ photo, onClose, onDelete }) {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, []);
+  }, [onClose]);
 
   return (
     <div
@@ -127,7 +127,7 @@ export default function EvolutionPhotos({ studentId }) {
       await deleteDoc(doc(db, "evolutionPhotos", photo.id));
       setLightbox(null);
       toast.success("Foto excluída.");
-    } catch {
+    } catch (_) {
       toast.error("Erro ao excluir.");
     }
   }
@@ -237,7 +237,7 @@ export default function EvolutionPhotos({ studentId }) {
         <div className="flex flex-col gap-6">
           {Object.entries(groups).map(([month, groupPhotos]) => (
             <div key={month}>
-              <p className="mb-2 text-xs font-semibold tracking-wide text-gray-400 uppercase capitalize">
+              <p className="mb-2 text-xs font-semibold tracking-wide text-gray-400 uppercase">
                 {month}
               </p>
               <div className="grid grid-cols-3 gap-2">

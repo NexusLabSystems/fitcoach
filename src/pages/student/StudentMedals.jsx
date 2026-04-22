@@ -196,17 +196,17 @@ export default function StudentMedals() {
       {confetti && <MedalConfetti onDone={() => setConfetti(false)} />}
 
       {/* Cabeçalho */}
-      <div className="bg-white px-5 pt-12 pb-5 border-b border-gray-100">
-        <h1 className="text-xl font-semibold text-gray-900">Medalhas</h1>
-        <p className="text-sm text-gray-400 mt-0.5">{unlockedCount} de {MEDAL_DEFS.length} desbloqueadas</p>
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden mt-3">
+      <div className="bg-gradient-to-br from-brand-500 to-brand-700 shadow-[0_4px_16px_rgba(0,0,0,0.15)] px-5 pt-12 pb-10">
+        <h1 className="text-xl font-semibold text-white">Medalhas</h1>
+        <p className="text-sm text-white/60 mt-0.5">{unlockedCount} de {MEDAL_DEFS.length} desbloqueadas</p>
+        <div className="h-2 bg-white/20 rounded-full overflow-hidden mt-3">
           <div className="h-full bg-yellow-400 rounded-full transition-all duration-700"
             style={{ width: `${(unlockedCount / MEDAL_DEFS.length) * 100}%` }} />
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 px-5 pt-5">
+      <div className="grid grid-cols-3 gap-3 px-5" style={{ marginTop: "-1.5rem" }}>
         {[
           { label: "Treinos",           value: totalLogs,  color: "text-gray-900" },
           { label: "Sequência atual",   value: `🔥 ${streak}`,  color: "text-brand-500" },

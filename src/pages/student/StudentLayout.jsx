@@ -87,14 +87,14 @@ export default function StudentLayout() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col max-w-md mx-auto">
+    <div className="min-h-screen flex flex-col max-w-md mx-auto bg-gray-50">
       {/* Page content */}
       <main className="flex-1 overflow-y-auto pb-20">
         <Outlet />
       </main>
 
       {/* Bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-200 z-20">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.07)] z-20">
         <div className="flex items-center justify-around px-2 py-2">
           {NAV.map(item => {
             const isHome = item.end === true;

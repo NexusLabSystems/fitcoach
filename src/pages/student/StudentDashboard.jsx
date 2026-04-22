@@ -201,7 +201,7 @@ export default function StudentDashboard() {
     <div className="min-h-screen">
 
       {/* ── Header com gradiente ──────────────────────────── */}
-      <div className="bg-gradient-to-br from-brand-500 to-brand-700 px-5 pt-12 pb-6">
+      <div className="bg-gradient-to-br from-brand-500 to-brand-700 shadow-[0_4px_16px_rgba(0,0,0,0.15)] px-5 pt-12 pb-6">
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-xs text-brand-200 capitalize mb-0.5">{today}</p>
@@ -327,8 +327,8 @@ export default function StudentDashboard() {
             },
             {
               value: thisMonth, label: "Este", sublabel: "mês",
-              bg: "bg-blue-50", color: "text-blue-600",
-              icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+              bg: "bg-teal-50", color: "text-teal-600",
+              icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
             },
             {
               value: streak, label: "Dias", sublabel: "seguidos",

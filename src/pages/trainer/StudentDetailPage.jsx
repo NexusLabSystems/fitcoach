@@ -474,7 +474,7 @@ export default function StudentDetailPage() {
               <div className="overflow-hidden card">
                 <div className="px-5 pt-5 pb-3">
                   <h3 className="text-sm font-semibold text-gray-900">Evolução da composição corporal</h3>
-                  <p className="mt-0.5 text-xs text-gray-400">{assessments.length} avaliação{assessments.length !== 1 ? "ões" : ""} registrada{assessments.length !== 1 ? "s" : ""}</p>
+                  <p className="mt-0.5 text-xs text-gray-400">{assessments.length} {assessments.length !== 1 ? "avaliações registradas" : "avaliação registrada"}</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">

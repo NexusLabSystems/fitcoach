@@ -589,7 +589,7 @@ function DayCard({ day, count, lastDate, onView }) {
           <p className="text-sm text-gray-500 mt-0.5">{muscles.join(" / ")}</p>
         )}
         {lastDate ? (
-          <p className="mt-2 text-xs font-medium text-blue-500">Último treino concluído em: {lastDate}</p>
+          <p className="mt-2 text-xs font-medium text-brand-600">Último treino concluído em: {lastDate}</p>
         ) : (
           <p className="mt-2 text-xs text-gray-400">Nenhum treino registrado ainda</p>
         )}
@@ -604,7 +604,7 @@ function DayCard({ day, count, lastDate, onView }) {
           </svg>
           Histórico
           {count > 0 && (
-            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold">{count}</span>
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-bold">{count}</span>
           )}
         </div>
         <div className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl">
@@ -1001,10 +1001,10 @@ export default function WorkoutPage() {
     const validDays = plan.days?.filter(d => d.exercises?.length > 0) ?? [];
     return (
       <div className="min-h-screen" style={{ overscrollBehavior: "contain" }}>
-        <div className="px-5 pt-12 pb-5 bg-white border-b border-gray-100">
-          <p className="text-xs text-gray-400 mb-0.5">Olá, {profile?.name?.split(" ")[0]}</p>
-          <h1 className="text-xl font-semibold text-gray-900 truncate">{plan.name}</h1>
-          <p className="mt-1 text-sm text-gray-400">{validDays.length} dia{validDays.length !== 1 ? "s" : ""} de treino</p>
+        <div className="px-5 pt-12 pb-5 bg-gradient-to-br from-brand-500 to-brand-700 shadow-[0_4px_16px_rgba(0,0,0,0.15)]">
+          <p className="text-xs text-white/60 mb-0.5">Olá, {profile?.name?.split(" ")[0]}</p>
+          <h1 className="text-xl font-semibold text-white truncate">{plan.name}</h1>
+          <p className="mt-1 text-sm text-white/60">{validDays.length} dia{validDays.length !== 1 ? "s" : ""} de treino</p>
         </div>
         <div className="flex flex-col gap-3 p-5">
           {validDays.map(day => {
@@ -1037,13 +1037,13 @@ export default function WorkoutPage() {
     return (
       <div className="min-h-screen pb-10 bg-gray-50" style={{ overscrollBehavior: "contain" }}>
         {/* Cabeçalho */}
-        <div className="px-5 pt-12 pb-5 bg-white border-b border-gray-100">
-          <button onClick={() => setViewMode("selection")} className="flex items-center gap-1.5 text-sm text-gray-500 mb-4 -ml-1">
+        <div className="px-5 pt-12 pb-5 bg-gradient-to-br from-brand-500 to-brand-700 shadow-[0_4px_16px_rgba(0,0,0,0.15)]">
+          <button onClick={() => setViewMode("selection")} className="flex items-center gap-1.5 text-sm text-white/70 mb-4 -ml-1">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
             Voltar
           </button>
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-xl font-bold leading-tight text-gray-900">
+            <h1 className="text-xl font-bold leading-tight text-white">
               {muscles.length > 0 ? muscles.join("/") : currentDay?.label}
             </h1>
           </div>
@@ -1071,17 +1071,17 @@ export default function WorkoutPage() {
   // ── Vista: treino ativo ───────────────────────────────────────────
   return (
     <div className="min-h-screen" style={{ overscrollBehavior: "contain" }}>
-      <div className="px-5 pt-12 pb-4 bg-white border-b border-gray-100">
-        <button onClick={() => setViewMode("selection")} className="flex items-center gap-1.5 text-sm text-gray-500 mb-3 -ml-1">
+      <div className="px-5 pt-12 pb-4 bg-gradient-to-br from-brand-500 to-brand-700 shadow-[0_4px_16px_rgba(0,0,0,0.15)]">
+        <button onClick={() => setViewMode("selection")} className="flex items-center gap-1.5 text-sm text-white/70 mb-3 -ml-1">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
           Trocar treino
         </button>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-gray-400">Olá, {profile?.name?.split(" ")[0]} 👋</p>
-            <h1 className="text-lg font-semibold text-gray-900">{currentDay?.label}</h1>
+            <p className="text-xs text-white/60">Olá, {profile?.name?.split(" ")[0]} 👋</p>
+            <h1 className="text-lg font-semibold text-white">{currentDay?.label}</h1>
           </div>
-          <span className="flex items-center gap-1 text-sm font-semibold text-brand-500 tabular-nums">
+          <span className="flex items-center gap-1 text-sm font-semibold text-white/90 tabular-nums">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
             </svg>

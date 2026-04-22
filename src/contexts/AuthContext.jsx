@@ -48,22 +48,32 @@ export function AuthProvider({ children }) {
 
     let data = snap.data();
 
-    // Se for aluno e ainda não tiver studentId, busca pelo email
-    // na coleção students para fazer a ligação automática
-    if (data.role === "student" && !data.studentId && email) {
-      const studentSnap = await getDocs(
-        query(collection(db, "students"), where("email", "==", email))
-      );
-      if (!studentSnap.empty) {
-        const studentDoc = studentSnap.docs[0];
-        await updateDoc(doc(db, "users", uid), {
-          studentId: studentDoc.id,
-          // copia dados úteis para o perfil
-          phone:     studentDoc.data().phone     ?? data.phone     ?? null,
-          goal:      studentDoc.data().goal      ?? data.goal      ?? null,
-          birthDate: studentDoc.data().birthDate ?? data.birthDate ?? null,
-        });
-        data = { ...data, studentId: studentDoc.id };
+    if (data.role === "student") {
+      // Se ainda não tiver studentId, busca pelo email e faz a ligação automática
+      if (!data.studentId && email) {
+        const studentSnap = await getDocs(
+          query(collection(db, "students"), where("email", "==", email))
+        );
+        if (!studentSnap.empty) {
+          const studentDoc = studentSnap.docs[0];
+          await updateDoc(doc(db, "users", uid), {
+            studentId: studentDoc.id,
+            phone:     studentDoc.data().phone     ?? data.phone     ?? null,
+            goal:      studentDoc.data().goal      ?? data.goal      ?? null,
+            birthDate: studentDoc.data().birthDate ?? data.birthDate ?? null,
+          });
+          data = {
+            ...data,
+            studentId:     studentDoc.id,
+            studentStatus: studentDoc.data().status ?? "active",
+          };
+        }
+      } else if (data.studentId) {
+        // Busca o status atual do aluno (para bloquear se arquivado)
+        const studentSnap = await getDoc(doc(db, "students", data.studentId));
+        if (studentSnap.exists()) {
+          data = { ...data, studentStatus: studentSnap.data().status ?? "active" };
+        }
       }
     }
 
