@@ -296,7 +296,7 @@ export default function StudentDashboard() {
                   <span className="text-sm font-semibold">Parabéns! Descanse e volte amanhã.</span>
                 </div>
               ) : (
-                <button onClick={() => navigate("/student/workout")} className="w-full py-3.5 text-base btn-primary">
+                <button onClick={() => navigate("/student/workout", { state: { autostart: true } })} className="w-full py-3.5 text-base btn-primary">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <path d="M6 4v16M18 4v16M6 12h12M3 8h3M18 8h3M3 16h3M18 16h3"/>
                   </svg>

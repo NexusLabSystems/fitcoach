@@ -1,10 +1,13 @@
 // src/pages/student/WorkoutPage.jsx
 import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useStudentWorkout } from "@/hooks/useStudentWorkout";
 import { useLastLog }        from "@/hooks/useLastLog";
 import { useAuth }           from "@/contexts/AuthContext";
-import { addDoc, collection, serverTimestamp, getDocs, query, where, Timestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { format } from "date-fns";
+import { ptBR }   from "date-fns/locale";
 import toast  from "react-hot-toast";
 import clsx   from "clsx";
 
@@ -38,6 +41,10 @@ function deserializeDoneSets(ds) {
   const out = {};
   for (const [k, v] of Object.entries(ds ?? {})) out[k] = new Set(v);
   return out;
+}
+
+function tryParseJSON(str) {
+  try { return str ? JSON.parse(str) : null; } catch { return null; }
 }
 
 // ── Beep + vibrate ao fim do descanso ────────────────────────────
@@ -480,20 +487,17 @@ function CelebrationModal({ stats, onClose }) {
   // Busca os dias do mês atual em que o aluno treinou
   useEffect(() => {
     if (!profile?.uid) return;
-    const now   = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-
+    const now = new Date();
     getDocs(query(
       collection(db, "workoutLogs"),
-      where("studentId", "==", profile.uid),
-      where("date", ">=", Timestamp.fromDate(start)),
-      where("date", "<=", Timestamp.fromDate(end))
+      where("studentId", "==", profile.uid)
     )).then(snap => {
       const days = new Set([now.getDate()]); // inclui hoje (recém salvo)
       snap.docs.forEach(d => {
         const date = d.data().date?.toDate?.();
-        if (date) days.add(date.getDate());
+        if (date && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+          days.add(date.getDate());
+        }
       });
       setWorkoutDays(days);
     }).catch(() => {});
@@ -682,6 +686,9 @@ function PreviewItem({ item }) {
 export default function WorkoutPage() {
   const { profile }       = useAuth();
   const { plan, loading } = useStudentWorkout();
+  const navigate          = useNavigate();
+  const location          = useLocation();
+  const autostartRef      = useRef(location.state?.autostart ?? false);
   const [viewMode, setViewMode]     = useState("selection"); // "selection" | "preview" | "workout"
   const [activeDay, setActiveDay]   = useState(0);
   const [doneSets, setDoneSets]     = useState({}); // { [exerciseId]: Set<number> }
@@ -697,15 +704,37 @@ export default function WorkoutPage() {
       where("studentId", "==", profile.uid),
       where("planId",    "==", plan.id)
     )).then(snap => {
-      if (snap.empty) { setActiveDay(plan.days.indexOf(validDays[0])); return; }
+      let nextValid;
+      if (snap.empty) {
+        nextValid = validDays[0];
+      } else {
+        const sorted = snap.docs
+          .map(d => d.data())
+          .sort((a, b) => (b.date?.seconds ?? 0) - (a.date?.seconds ?? 0));
+        const lastIndex = validDays.findIndex(d => d.label === sorted[0].dayLabel);
+        nextValid = validDays[(lastIndex === -1 ? 0 : lastIndex + 1) % validDays.length];
+      }
+      const nextDayIndex = plan.days.indexOf(nextValid);
+      setActiveDay(nextDayIndex);
 
-      const sorted = snap.docs
-        .map(d => d.data())
-        .sort((a, b) => (b.date?.seconds ?? 0) - (a.date?.seconds ?? 0));
+      // Restaura sessão salva (evita perder tela ao refresh ou voltar da navegação)
+      const session = tryParseJSON(localStorage.getItem(`fitcoach_session_${plan.id}`));
+      if (session?.activeDay === nextDayIndex) {
+        if (session.viewMode === "workout") {
+          const wkKey = `fitcoach_wk_${plan.id}_${nextValid?.id}`;
+          const saved = tryParseJSON(localStorage.getItem(wkKey));
+          const hasProgress = Object.values(saved?.doneSets ?? {}).some(v => Array.isArray(v) && v.length > 0);
+          if (hasProgress) { setViewMode("workout"); return; }
+        } else if (session.viewMode === "preview") {
+          setViewMode("preview"); return;
+        }
+      }
 
-      const lastIndex = validDays.findIndex(d => d.label === sorted[0].dayLabel);
-      const nextValid = validDays[(lastIndex === -1 ? 0 : lastIndex + 1) % validDays.length];
-      setActiveDay(plan.days.indexOf(nextValid));
+      // Veio do dashboard com "Iniciar treino" → vai direto para a prévia
+      if (autostartRef.current) {
+        autostartRef.current = false;
+        setViewMode("preview");
+      }
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan?.id, profile?.uid]);
@@ -768,6 +797,12 @@ export default function WorkoutPage() {
       loads,
     }));
   }, [doneSets, loads, plan?.id, currentDay?.id]);
+
+  // ── Persiste sessão para restaurar após refresh ou navegação ────
+  useEffect(() => {
+    if (!plan?.id) return;
+    localStorage.setItem(`fitcoach_session_${plan.id}`, JSON.stringify({ viewMode, activeDay }));
+  }, [viewMode, activeDay, plan?.id]);
 
   // ── Screen Wake Lock ────────────────────────────────────────────
   useEffect(() => {
@@ -898,21 +933,24 @@ export default function WorkoutPage() {
   async function handleFinish() {
     setFinishing(true);
     try {
+      const completedExs = leafExs.filter(e => (doneSets[e.id]?.size ?? 0) >= e.sets).length;
       await addDoc(collection(db, "workoutLogs"), {
         studentId:       profile.uid,
         planId:          plan.id,
         dayLabel:        currentDay.label,
-        exercisesDone:   leafExs.length,
+        exercisesDone:   completedExs,
+        totalExercises:  leafExs.length,
         loads,
         durationSeconds: elapsed,
         date:            serverTimestamp(),
       });
       clearInterval(timerIntervalRef.current);
       clearTimeout(notifTimeoutRef.current);
-      // Limpa progresso e hora de início salvos
+      // Limpa progresso, hora de início e sessão salvos
       localStorage.removeItem(`fitcoach_wk_${plan.id}_${currentDay.id}`);
       localStorage.removeItem(`fitcoach_start_${plan.id}_${currentDay.id}`);
-      setCelebration({ totalSets: completedSets, exercises: leafExs.length, dayLabel: currentDay.label, durationSeconds: elapsed });
+      localStorage.removeItem(`fitcoach_session_${plan.id}`);
+      setCelebration({ totalSets: completedSets, exercises: completedExs, totalExercises: leafExs.length, dayLabel: currentDay.label, durationSeconds: elapsed });
       workoutStartRef.current = null;
       setElapsed(0);
       setDoneSets({});
@@ -962,7 +1000,7 @@ export default function WorkoutPage() {
   if (viewMode === "selection") {
     const validDays = plan.days?.filter(d => d.exercises?.length > 0) ?? [];
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen" style={{ overscrollBehavior: "contain" }}>
         <div className="px-5 pt-12 pb-5 bg-white border-b border-gray-100">
           <p className="text-xs text-gray-400 mb-0.5">Olá, {profile?.name?.split(" ")[0]}</p>
           <h1 className="text-xl font-semibold text-gray-900 truncate">{plan.name}</h1>
@@ -997,7 +1035,7 @@ export default function WorkoutPage() {
     )];
 
     return (
-      <div className="min-h-screen pb-10 bg-gray-50">
+      <div className="min-h-screen pb-10 bg-gray-50" style={{ overscrollBehavior: "contain" }}>
         {/* Cabeçalho */}
         <div className="px-5 pt-12 pb-5 bg-white border-b border-gray-100">
           <button onClick={() => setViewMode("selection")} className="flex items-center gap-1.5 text-sm text-gray-500 mb-4 -ml-1">
@@ -1032,7 +1070,7 @@ export default function WorkoutPage() {
 
   // ── Vista: treino ativo ───────────────────────────────────────────
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ overscrollBehavior: "contain" }}>
       <div className="px-5 pt-12 pb-4 bg-white border-b border-gray-100">
         <button onClick={() => setViewMode("selection")} className="flex items-center gap-1.5 text-sm text-gray-500 mb-3 -ml-1">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -1087,11 +1125,12 @@ export default function WorkoutPage() {
           )
         )}
 
-        {allDone && (
-          <button onClick={handleFinish} disabled={finishing} className="w-full py-4 mt-4 text-base btn-primary">
+        {isWorkoutActive && (
+          <button onClick={handleFinish} disabled={finishing}
+            className={clsx("w-full py-4 mt-4 text-base btn-primary", !allDone && "opacity-80")}>
             {finishing
               ? <><span className="w-5 h-5 border-2 border-white rounded-full border-t-transparent animate-spin" />Salvando...</>
-              : "🏆 Concluir treino"
+              : allDone ? "🏆 Concluir treino" : "Concluir treino"
             }
           </button>
         )}
@@ -1099,7 +1138,7 @@ export default function WorkoutPage() {
 
       {timer       && <RestTimer seconds={timer.seconds} onDone={() => setTimer(null)} />}
       {detailItem  && <ExerciseDetailModal item={detailItem} onClose={() => setDetailItem(null)} />}
-      {celebration && <CelebrationModal stats={celebration} onClose={() => { setCelebration(null); setViewMode("selection"); }} />}
+      {celebration && <CelebrationModal stats={celebration} onClose={() => { setCelebration(null); setViewMode("selection"); navigate("/student"); }} />}
     </div>
   );
 }

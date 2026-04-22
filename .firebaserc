@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "fitcoach-374f3"
+  },
+  "targets": {
+    "fitcoach-374f3": {
+      "hosting": {
+        "chrystianoferreirapersonal": [
+          "chrystianoferreirapersonal"
+        ]
+      }
+    }
+  }
+}

@@ -59,30 +59,30 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="flex min-h-screen">
       {/* ── Esquerda: banner ─────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 bg-surface flex-col justify-between p-12">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+      <div className="flex-col justify-between hidden p-12 lg:flex lg:w-1/2 bg-surface">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-brand-500">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
               <path d="M6 4v16M18 4v16M6 12h12M3 8h3M18 8h3M3 16h3M18 16h3"/>
             </svg>
           </div>
-          <span className="text-white font-semibold text-lg">FitCoach</span>
+          <span className="text-xl font-bold tracking-wide text-white">Pump <span className="text-brand-300">Fit</span></span>
         </div>
 
         <div>
-          <p className="text-4xl font-semibold text-white leading-tight mb-4">
+          <p className="mb-4 text-4xl font-semibold leading-tight text-white">
             Gerencie seus alunos.<br/>
             <span className="text-brand-400">Amplie seus resultados.</span>
           </p>
-          <p className="text-gray-400 text-base leading-relaxed">
+          <p className="text-base leading-relaxed text-gray-400">
             Treinos personalizados, avaliações e pagamentos em uma única plataforma.
           </p>
         </div>
 
         <div className="flex gap-6">
-          {[["500+", "Personal trainers"], ["12k+", "Alunos ativos"], ["98%", "Satisfação"]].map(([num, label]) => (
+          {[["70+", "Personal trainers"], ["500+", "Alunos ativos"], ["98%", "Satisfação"]].map(([num, label]) => (
             <div key={label}>
               <p className="text-2xl font-semibold text-white">{num}</p>
               <p className="text-sm text-gray-400">{label}</p>
@@ -92,20 +92,15 @@ export default function LoginPage() {
       </div>
 
       {/* ── Direita: formulário ───────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white">
+      <div className="flex items-center justify-center flex-1 px-6 py-12 bg-white">
         <div className="w-full max-w-sm animate-fade-in">
-          {/* Logo mobile */}
-          <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-7 h-7 rounded-lg bg-brand-500 flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M6 4v16M18 4v16M6 12h12M3 8h3M18 8h3M3 16h3M18 16h3"/>
-              </svg>
-            </div>
-            <span className="font-semibold text-gray-900">FitCoach</span>
+          {/* Logo */}
+          <div className="mb-8">
+            <img src="/logo.png" alt="Chrystiano Ferreira Personal Trainer" className="w-auto h-21" />
           </div>
 
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">Bem-vindo de volta</h1>
-          <p className="text-sm text-gray-500 mb-8">Entre na sua conta</p>
+          <h1 className="mb-1 text-2xl font-semibold text-gray-900">Bem-vindo de volta</h1>
+          <p className="mb-8 text-sm text-gray-500">Entre na sua conta</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
@@ -122,7 +117,7 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="label" htmlFor="password">Senha</label>
-                <Link to="/forgot-password" className="text-xs text-brand-500 hover:text-brand-600 transition-colors">
+                <Link to="/forgot-password" className="text-xs transition-colors text-brand-500 hover:text-brand-600">
                   Esqueci a senha
                 </Link>
               </div>
@@ -142,16 +137,16 @@ export default function LoginPage() {
             >
               {loading ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-white rounded-full border-t-transparent animate-spin" />
                   Entrando...
                 </>
               ) : "Entrar"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="mt-6 text-sm text-center text-gray-500">
             Não tem conta?{" "}
-            <Link to="/register" className="text-brand-500 font-medium hover:text-brand-600 transition-colors">
+            <Link to="/register" className="font-medium transition-colors text-brand-500 hover:text-brand-600">
               Criar conta grátis
             </Link>
           </p>
@@ -170,13 +165,13 @@ export default function LoginPage() {
           )}
 
           {showGuide && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4"
+            <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/50"
               onClick={() => setShowGuide(null)}>
-              <div className="bg-white rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+              <div className="w-full max-w-sm p-6 bg-white rounded-2xl" onClick={e => e.stopPropagation()}>
                 {showGuide === "ios" ? (
                   <>
-                    <h3 className="text-base font-bold text-gray-900 mb-1">Instalar no iPhone / iPad</h3>
-                    <p className="text-sm text-gray-500 mb-4">Siga os passos abaixo no Safari:</p>
+                    <h3 className="mb-1 text-base font-bold text-gray-900">Instalar no iPhone / iPad</h3>
+                    <p className="mb-4 text-sm text-gray-500">Siga os passos abaixo no Safari:</p>
                     <ol className="flex flex-col gap-3 text-sm text-gray-700">
                       <li className="flex items-start gap-3">
                         <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
@@ -198,8 +193,8 @@ export default function LoginPage() {
                   </>
                 ) : (
                   <>
-                    <h3 className="text-base font-bold text-gray-900 mb-1">Instalar no Android</h3>
-                    <p className="text-sm text-gray-500 mb-4">Siga os passos abaixo no Chrome:</p>
+                    <h3 className="mb-1 text-base font-bold text-gray-900">Instalar no Android</h3>
+                    <p className="mb-4 text-sm text-gray-500">Siga os passos abaixo no Chrome:</p>
                     <ol className="flex flex-col gap-3 text-sm text-gray-700">
                       <li className="flex items-start gap-3">
                         <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
