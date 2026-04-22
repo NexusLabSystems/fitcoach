@@ -138,7 +138,7 @@ export default function InvitePage() {
           </div>
           <h1 className="text-xl font-semibold text-gray-900">Você foi convidado!</h1>
           <p className="mt-1 text-sm text-gray-500">
-            <span className="font-medium text-brand-500">{invite?.trainerName}</span> está te esperando no FitCoach
+            <span className="font-medium text-brand-500">{invite?.trainerName}</span> está te esperando no Pump Fit
           </p>
         </div>
 
@@ -208,7 +208,7 @@ export default function InvitePage() {
         </div>
 
         <p className="mt-4 text-xs text-center text-gray-400">
-          Este convite é válido por 7 dias · FitCoach
+          Este convite é válido por 7 dias · Pump Fit
         </p>
       </div>
     </div>

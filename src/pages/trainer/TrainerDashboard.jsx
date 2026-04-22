@@ -147,7 +147,7 @@ const TOUR_STEPS = [
   {
     target: null,
     icon: "👋",
-    title: "Bem-vindo ao FitCoach!",
+    title: "Bem-vindo ao Pump Fit!",
     description: "Vamos fazer um tour rápido para te mostrar como a plataforma funciona. Você pode pular a qualquer momento e retomar pelas configurações.",
   },
   {

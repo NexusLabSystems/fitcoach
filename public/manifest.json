@@ -1,6 +1,6 @@
 {
-  "name": "FitCoach — Seu Treino",
-  "short_name": "FitCoach",
+  "name": "Pump Fit — Seu Treino",
+  "short_name": "Pump Fit",
   "description": "Treinos personalizados do seu personal",
   "start_url": "/",
   "display": "standalone",

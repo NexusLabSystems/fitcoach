@@ -89,7 +89,7 @@ export default function TrainerLayout() {
   // Título da página atual
   const pageTitle = Object.entries(PAGE_TITLES)
     .sort((a, b) => b[0].length - a[0].length)
-    .find(([path]) => location.pathname.startsWith(path))?.[1] ?? "FitCoach";
+    .find(([path]) => location.pathname.startsWith(path))?.[1] ?? "Pump Fit";
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -112,7 +112,7 @@ export default function TrainerLayout() {
               <path d="M6 4v16M18 4v16M6 12h12M3 8h3M18 8h3M3 16h3M18 16h3"/>
             </svg>
           </div>
-          {!collapsed && <span className="text-sm font-semibold text-gray-900">FitCoach</span>}
+          {!collapsed && <span className="text-sm font-semibold text-gray-900">Pump Fit</span>}
         </div>
 
         {/* Navigation */}
@@ -189,7 +189,7 @@ export default function TrainerLayout() {
                 <path d="M6 4v16M18 4v16M6 12h12M3 8h3M18 8h3M3 16h3M18 16h3"/>
               </svg>
             </div>
-            <span className="text-sm font-semibold text-gray-900">FitCoach</span>
+            <span className="text-sm font-semibold text-gray-900">Pump Fit</span>
           </div>
 
           {/* Right side */}

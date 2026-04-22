@@ -318,7 +318,7 @@ export default function WorkoutBuilder() {
                 <path d="M6 4v16M18 4v16M6 12h12M3 8h3M18 8h3M3 16h3M18 16h3"/>
               </svg>
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 hidden sm:block">FitCoach</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 hidden sm:block">Pump Fit</span>
           </div>
 
           <div className="flex-1 flex items-center gap-2 min-w-0">

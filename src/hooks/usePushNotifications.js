@@ -41,12 +41,12 @@ export function usePushNotifications() {
     if (!payments.length) return;
 
     if (payments.length === 1) {
-      notify("💰 Pagamento atrasado — FitCoach", {
+      notify("💰 Pagamento atrasado — Pump Fit", {
         body: `${payments[0].studentName} está com mensalidade em atraso.`,
         tag:  `overdue-${payments[0].paymentId}`,
       });
     } else {
-      notify(`💰 ${payments.length} pagamentos atrasados — FitCoach`, {
+      notify(`💰 ${payments.length} pagamentos atrasados — Pump Fit`, {
         body: `Você tem ${payments.length} alunos com mensalidade em atraso.`,
         tag:  "overdue-batch",
       });
