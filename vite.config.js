@@ -26,11 +26,11 @@ export default defineConfig({
       ],
 
       manifest: {
-        name:             "FitCoach — Seu Treino",
-        short_name:       "FitCoach",
-        description:      "Plataforma para personal trainers e alunos",
-        theme_color:      "#FF5722",
-        background_color: "#1A1A2E",
+        name:             "Pump Fit — Seu Treino",
+        short_name:       "Pump Fit",
+        description:      "Treinos personalizados do seu personal",
+        theme_color:      "#3E564F",
+        background_color: "#3E564F",
         display:          "standalone",
         orientation:      "portrait-primary",
         start_url:        "/",
